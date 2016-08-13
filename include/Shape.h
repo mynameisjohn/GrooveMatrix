@@ -2,6 +2,7 @@
 
 #include "quatvec.h"
 #include "Util.h"
+#include "EntComponent.h"
 
 #include <glm/mat2x2.hpp>
 #include <glm/vec2.hpp>
@@ -15,7 +16,7 @@ struct Triangle;
 // Why make this weird class?
 // So I can keep all types of shapes
 // inside the contiguous data structures
-struct Shape
+struct Shape : public EntComponent
 {
 	// Enum meant to represent the type of shape
 	// (or rather, which union members mean something)

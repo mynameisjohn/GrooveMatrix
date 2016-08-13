@@ -109,7 +109,7 @@ bool ClipLauncher::RegisterClip( std::string strClipName, std::string strHeadFil
 	SDL_AudioSpec wavSpec{ 0 };
 	if ( SDL_LoadWAV( strHeadFile.c_str(), &wavSpec, (Uint8 **) &pSoundBuffer, &uNumBytesInHead ) )
 	{
-		if ( wavSpec != *m_pAudioSpec )
+		if ( wavSpec == *m_pAudioSpec )
 		{
 			// Load the tail file, check against our spec
 			if ( SDL_LoadWAV( strTailFile.c_str(), &wavSpec, (Uint8 **) &pTailBuffer, &uNumBytesInTail ) )

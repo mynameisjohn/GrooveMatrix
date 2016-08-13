@@ -2,11 +2,12 @@
 
 #include "GL_Util.h"
 #include "quatvec.h"
+#include "EntComponent.h"
 
 #include <map>
 #include <array>
 
-class Drawable
+class Drawable : public EntComponent
 {
 public:
 	Drawable();

@@ -1,4 +1,5 @@
-#include "GrooveMatrix.h"
+#include "ClipLauncher.h"
+#include "MatrixUI.h"
 
 #include <pyliaison.h>
 
@@ -101,11 +102,21 @@ namespace pyl
 			return false;\
 		}
 
+/*static*/ bool EntComponent::pylExpose()
+{
+	CREATE_AND_TEST_MOD( EntComponent );
+	AddClassToMod( pModDef, EntComponent );
+	AddMemFnToMod( pModDef, EntComponent, SetEntID, void, int );
+	AddMemFnToMod( pModDef, EntComponent, GetEntID, int );
+	return true;
+}
+
 /*static*/ bool Shape::pylExpose()
 {
 	CREATE_AND_TEST_MOD( Shape );
 
-	AddClassToMod( pModDef, Shape );
+	pyl::ModuleDef * pEntMod = pyl::ModuleDef::GetModuleDef( "EntComponent" );
+	AddSubClassToMod( pModDef, Shape, pEntMod, EntComponent );
 
 	AddMemFnToMod( pModDef, Shape, GetPosition, vec2 );
 	AddMemFnToMod( pModDef, Shape, GetType, EType );
@@ -207,12 +218,19 @@ namespace pyl
 	AddMemFnToMod( pModDef, Camera, GetScreenWidth, int );
 	AddMemFnToMod( pModDef, Camera, GetScreenHeight, int );
 
+	// The macro doesn't work out for static functions...
+	auto SetCamMatHandle = Camera::SetCamMatHandle;
+	AddFnToMod( pModDef, SetCamMatHandle );
+
 	return true;
 }
 
 /*static*/ bool Drawable::pylExpose()
 {
 	CREATE_AND_TEST_MOD( Drawable );
+
+	pyl::ModuleDef * pEntMod = pyl::ModuleDef::GetModuleDef( "EntComponent" );
+	AddSubClassToMod( pModDef, Drawable, pEntMod, EntComponent );
 
 	AddMemFnToMod( pModDef, Drawable, SetPos2D, void, vec2 );
 	AddMemFnToMod( pModDef, Drawable, SetTransform, void, quatvec );
@@ -226,16 +244,6 @@ namespace pyl
 
 	auto SetColorHandle = Drawable::SetColorHandle;
 	AddFnToMod( pModDef, SetColorHandle );
-
-	return true;
-}
-
-/*static*/ bool GrooveMatrix::pylExpose()
-{
-	CREATE_AND_TEST_MOD( GrooveMatrix );
-
-	AddMemFnToMod( pModDef, GrooveMatrix, GetMatrixUI, MatrixUI * );
-	AddMemFnToMod( pModDef, GrooveMatrix, GetClipLauncher, ClipLauncher * );
 
 	return true;
 }
