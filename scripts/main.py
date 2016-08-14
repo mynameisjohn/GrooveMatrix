@@ -35,7 +35,9 @@ def Initialize(pMatrixUI, pClipLauncher):
     # Declare all clips (clip creation args as tuples)
     nFadeMs = 5
     strClipDir = '../audio/'
-    diRowClips = {'Drums' : [('drum1', strClipDir+'drum1.wav', '', nFadeMs)]}
+    diRowClips = {'Drums' : [('drum1', strClipDir+'drum1.wav', '', nFadeMs)],
+    'sdf' : [('drum1', strClipDir+'drum1.wav', '', nFadeMs)],
+    'dfgdfg' : [('drum1', strClipDir+'drum1.wav', '', nFadeMs)]}
 
     # Transform each rowname / tup pair into a rowname / cClip pair
     for rowName in diRowClips.keys():
@@ -52,11 +54,9 @@ def Initialize(pMatrixUI, pClipLauncher):
     diRowClips = {k : v for k, v in diRowClips.items() if len(v)}
 
     # The window width and height are a function of the cells we'll have
-    nWindowWidth = Constants.nGap + Row.nHeaderW
-    nWindowHeight = Constants.nGap
-    for i in range(len(diRowClips.keys())):
-        nWindowWidth += Constants.nGap + 2 * Cell.nRadius
-        nWindowHeight += Row.nHeaderH + Constants.nGap
+    nCols = max(len(liCells) for liCells in diRowClips.values())
+    nWindowWidth = Constants.nGap + Row.nHeaderW + nCols * (Constants.nGap + 2 * Cell.nRadius)
+    nWindowHeight = Constants.nGap + len(diRowClips.keys()) * (Row.nHeaderH + Constants.nGap)
 
     # init the UI display
     if cMatrixUI.InitDisplay('SimpleRB1', [.1,.1,.1,1.],{
