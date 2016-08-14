@@ -102,7 +102,6 @@ class Cell(Entity):
 		if self.mRow.mActiveCell is not None:
 			if self.mRow.mActiveCell == self:
 				self.mRow.SetPendingCell(None)
-				self.mRow.ExchangeActiveCell()
 				return
 		self.mRow.SetPendingCell(self)
 
@@ -168,7 +167,6 @@ class Row(Entity):
 	def SetPendingCell(self, cell):
 		if cell is None:
 			self.mPendingCell = None
-			print('Pending is None')
 			return True
 		if cell in self.liCells:
 			self.mPendingCell = cell

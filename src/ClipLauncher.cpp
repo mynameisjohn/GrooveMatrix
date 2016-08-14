@@ -175,6 +175,9 @@ bool ClipLauncher::HandleCommand( Command cmd )
 	if ( cmd.eID == ECommandID::None )
 		return false;
 
+	if ( cmd.eID == ECommandID::StartVoice && m_bPlaying == false )
+		cmd.uData = 0;
+
 	std::lock_guard<std::mutex> lg( m_muAudioMutex );
 	m_liPublicCmdQueue.push_back( cmd );
 
@@ -186,6 +189,10 @@ bool ClipLauncher::HandleCommands( std::list<Command> liCommands )
 {
 	if ( liCommands.empty() )
 		return false;
+
+	for ( Command& cmd : liCommands)
+		if ( cmd.eID == ECommandID::StartVoice && m_bPlaying == false )
+			cmd.uData = 0;
 
 	std::lock_guard<std::mutex> lg( m_muAudioMutex );
 	m_liPublicCmdQueue.splice( m_liPublicCmdQueue.end(), liCommands );
@@ -395,4 +402,13 @@ void ClipLauncher::getMessagesFromMainThread( std::list<Command> liCommandsToPos
 	// The audio thread doesn't care about anything else
 	// so clear the list when we're done with it
 	m_liAudioCmdQueue.clear();
+
+	// If we have no voices, post a message indicating so
+	//if ( m_liVoices.empty() )
+	//{
+	//	std::lock_guard<std::mutex> lg( m_muAudioMutex );
+	//	ClipLauncher::Command cmd;
+	//	cmd.eID = ClipLauncher::ECommandID::AllQuiet;
+	//	m_liPublicCmdQueue.push_back( cmd );
+	//}
 }

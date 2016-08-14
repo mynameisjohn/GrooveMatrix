@@ -86,6 +86,7 @@ public:
 		//////////////////////////////////////////////////////////
 		// These commands are posted by the audio thread
 		BufCompleted,	// The audio thread has rendered a buffer 
+		AllQuiet,		// There are no voices playing
 	};
 
 	// Command object, stores the necessary information

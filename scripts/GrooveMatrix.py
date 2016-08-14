@@ -110,6 +110,7 @@ class GrooveMatrix:
             if len(setOn):
                 self.cClipLauncher.SetPlayPause(True)
                 return
+
         # Determine how many buffers have advanced, calculate increment
         # (this involves update the C++ Loop Manager, which locks a mutex)
         nCurNumBufs = self.cClipLauncher.GetNumBufsCompleted()
@@ -135,11 +136,12 @@ class GrooveMatrix:
                     # If the active cell is changing
                     if row.ExchangeActiveCell():
                         # If the original wasn't None, turn it off
-                        if prevCell is not None:
-                            print('turning',prevCell,'off')
-                            setOff.add(prevCell)
+                        if curCell is not None:
+                            print('turning', curCell, 'off')
+                            setOff.add(curCell)
                         # Turn on the new cells
-                        setOn.add(row.mActiveCell)
+                        if row.mActiveCell is not None:
+                            setOn.add(row.mActiveCell)
             elif row.ExchangeActiveCell():
                 # Turn on the new cells
                 setOn.add(row.mActiveCell)

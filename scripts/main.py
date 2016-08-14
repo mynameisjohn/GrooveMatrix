@@ -96,9 +96,6 @@ def Initialize(pMatrixUI, pClipLauncher):
     for rowName, liClips in diRowClips.items():
         g_GrooveMatrix.AddRow(rowName, clrOn, clrOff, liClips)
 
-    # Start the clip launcher
-    cClipLauncher.SetPlayPause(True)
-
     return True
 
 def HandleEvent(pSdlEvent):
