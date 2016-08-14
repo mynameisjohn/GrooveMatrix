@@ -1,5 +1,6 @@
 #include "ClipLauncher.h"
 #include "MatrixUI.h"
+#include "Clip.h"
 
 #include <pyliaison.h>
 
@@ -164,6 +165,12 @@ namespace pyl
 		obModule.set_attr( "cmdStopVoices", ClipLauncher::ECommandID::StopVoices );
 		obModule.set_attr( "cmdOneShot", ClipLauncher::ECommandID::OneShot );
 	} );
+
+	// Also add the clip class
+	AddClassToMod( pModDef, Clip );
+	AddMemFnToMod( pModDef, Clip, GetName, std::string );
+	AddMemFnToMod( pModDef, Clip, GetNumSamples, size_t, bool );
+	AddMemFnToMod( pModDef, Clip, GetNumFadeSamples, size_t );
 
 	return true;
 }

@@ -56,6 +56,9 @@ class Entity:
 	def OnLButtonUp(self):
 		pass
 
+	def Update(self):
+		pass
+
 	# These are probably worthwhile
 	def __hash__(self):
 		return hash(self.nID)
@@ -73,13 +76,18 @@ class Entity:
 class Cell(Entity):
 	# Cells are a circle
 	nRadius = 50
-	def __init__(self, GM, cClip, fVolume):
+	def __init__(self, GM, row, cClip, fVolume):
 		# set up ID
 		super(Cell, self).__init__(GM)
 
 		# Store cClip ref and volume
 		self.cClip = cClip
 		self.fVolume = float(fVolume)
+		self.mRow = row
+
+		# Every cell has a trigger resolution
+		# which for now is just its duration
+		self.nTriggerRes = self.cClip.GetNumSamples(False)
 
 		# Set up UI components
 		self.nShIdx = GM.cMatrixUI.AddShape(Shape.Circle, [0, 0], {'r' : Cell.nRadius})
@@ -90,7 +98,13 @@ class Cell(Entity):
 
 	# Mouse handler override
 	def OnLButtonUp(self):
-		print('here I go down the jope')
+		# I guess the voice ID is just the ent ID... why not
+		if self.mRow.mActiveCell is not None:
+			if self.mRow.mActiveCell == self:
+				self.mRow.SetPendingCell(None)
+				self.mRow.ExchangeActiveCell()
+				return
+		self.mRow.SetPendingCell(self)
 
 # Rows will own a list of clips
 # and can have one active clip,
@@ -123,7 +137,7 @@ class Row(Entity):
 		self.liCells = []
 		for i in range(len(liClips)):
 			# Construct the cell
-			cell = Cell(GM, liClips[i], 1.)
+			cell = Cell(GM, self, liClips[i], 1.)
 
 			# Determine x pos
 			liCellPos = [nCellPosX, nPosY]
@@ -142,7 +156,7 @@ class Row(Entity):
 
 		# Set up play state
 		self.mActiveCell = None
-		self.mActiveCell = None
+		self.mPendingCell = None
 
 		# Set Component IDs
 		self.SetComponentID()
@@ -150,6 +164,22 @@ class Row(Entity):
 	# Mouse handler override
 	def OnLButtonUp(self):
 		print('here I go down the slope')
+
+	def SetPendingCell(self, cell):
+		if cell is None:
+			self.mPendingCell = None
+			print('Pending is None')
+			return True
+		if cell in self.liCells:
+			self.mPendingCell = cell
+			return True
+		return False
+
+	def ExchangeActiveCell(self):
+		if self.mPendingCell is not self.mActiveCell:
+			self.mActiveCell = self.mPendingCell
+			return True
+		return False
 
 # A column is like a Scene in Ableton
 # Rather than own a list of clips,

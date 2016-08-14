@@ -11,7 +11,7 @@ import Camera
 import Shader
 import Drawable
 from MatrixUI import MatrixUI
-from ClipLauncher import ClipLauncher
+from ClipLauncher import ClipLauncher, Clip
 
 from Util import Constants, ctype_from_addr
 from GrooveMatrix import Row, Cell, GrooveMatrix
@@ -45,7 +45,7 @@ def Initialize(pMatrixUI, pClipLauncher):
             # If we can register the clip
             if cClipLauncher.RegisterClip(*tupClip):
                 # Get the cClip and store in a list
-                liClips.append(cClipLauncher.GetClip(tupClip[0]))
+                liClips.append(Clip(cClipLauncher.GetClip(tupClip[0])))
         diRowClips[rowName] = liClips
 
     # Remove any empty clips
@@ -96,6 +96,9 @@ def Initialize(pMatrixUI, pClipLauncher):
     for rowName, liClips in diRowClips.items():
         g_GrooveMatrix.AddRow(rowName, clrOn, clrOff, liClips)
 
+    # Start the clip launcher
+    cClipLauncher.SetPlayPause(True)
+
     return True
 
 def HandleEvent(pSdlEvent):
@@ -106,5 +109,4 @@ def HandleEvent(pSdlEvent):
 import time
 def Update():
     global g_GrooveMatrix
-    g_GrooveMatrix.cMatrixUI.Update()
-    g_GrooveMatrix.cMatrixUI.Draw()
+    g_GrooveMatrix.Update()
