@@ -160,6 +160,12 @@ void ClipLauncher::getMessagesFromAudThread()
 		m_liPublicCmdQueue.pop_front();
 		m_uNumBufsCompleted += tFront.uData;
 	}
+
+	if ( std::any_of( m_liPublicCmdQueue.begin(), m_liPublicCmdQueue.end(), [] ( const Command& cmd ) { return cmd.eID == ECommandID::AllQuiet; } ) )
+	{
+		m_liPublicCmdQueue.clear();
+		SetPlayPause( false );
+	}
 }
 
 // Called by client thread
@@ -404,11 +410,11 @@ void ClipLauncher::getMessagesFromMainThread( std::list<Command> liCommandsToPos
 	m_liAudioCmdQueue.clear();
 
 	// If we have no voices, post a message indicating so
-	//if ( m_liVoices.empty() )
-	//{
-	//	std::lock_guard<std::mutex> lg( m_muAudioMutex );
-	//	ClipLauncher::Command cmd;
-	//	cmd.eID = ClipLauncher::ECommandID::AllQuiet;
-	//	m_liPublicCmdQueue.push_back( cmd );
-	//}
+	if ( m_liVoices.empty() )
+	{
+		std::lock_guard<std::mutex> lg( m_muAudioMutex );
+		ClipLauncher::Command cmd;
+		cmd.eID = ClipLauncher::ECommandID::AllQuiet;
+		m_liPublicCmdQueue.push_back( cmd );
+	}
 }

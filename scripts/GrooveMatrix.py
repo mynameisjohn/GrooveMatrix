@@ -100,13 +100,16 @@ class GrooveMatrix:
         # if the clip launcher hasn't started yet,
         # maybe start it if one of our cells wants to play
         if self.cClipLauncher.GetPlayPause() == False:
+            self.nCurSamplePos = 0
+            self.nCurSamplePosInc = 0
+            self.nNumBufsCompleted = 0
             setOn = set()
             for row in self.diRows.values():
                 if row.ExchangeActiveCell():
                     setOn.add(row.mActiveCell)
             for c in setOn:
-                cmd = ()
-                self.cClipLauncher.HandleCommand((clCMD.cmdStartVoice, c.cClip.c_ptr, 0, c.fVolume, c.nTriggerRes))
+                if c is not None:
+                    self.cClipLauncher.HandleCommand((clCMD.cmdStartVoice, c.cClip.c_ptr, 0, c.fVolume, c.nTriggerRes))
             if len(setOn):
                 self.cClipLauncher.SetPlayPause(True)
                 return
