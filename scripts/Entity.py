@@ -28,13 +28,13 @@ class Entity:
 	# of entities created, which is useful
 	# for generating unique IDs
 	nEntsCreated = 0
-
+	# Increment the class ID counter and return the old
 	def NewID():
 		ret = Entity.nEntsCreated
 		Entity.nEntsCreated += 1
 		return ret
 
-	# I imagine this will be useful
+	# Constructor takes in groove matrix instance
 	def __init__(self, GM):
 		self.nID = Entity.NewID()
 		self.cGM = GM
@@ -43,10 +43,10 @@ class Entity:
 		self.nDrIdx = -1
 
 	def GetShape(self):
-		return Shape.Shape(self.cGM.GetMatrixUI().GetShape(self.nShIdx))
+		return Shape.Shape(self.cGM.cMatrixUI.GetShape(self.nShIdx))
 
 	def GetDrawable(self):
-		return Drawable.Drawable(self.cGM.GetMatrixUI().GetDrawable(self.nDrIdx))
+		return Drawable.Drawable(self.cGM.cMatrixUI.GetDrawable(self.nDrIdx))
 
 	def SetComponentID(self):
 		self.GetShape().SetEntID(self.nID)
@@ -73,19 +73,24 @@ class Entity:
 class Cell(Entity):
 	# Cells are a circle
 	nRadius = 50
-
 	def __init__(self, GM, cClip, fVolume):
 		# set up ID
 		super(Cell, self).__init__(GM)
+
 		# Store cClip ref and volume
 		self.cClip = cClip
 		self.fVolume = float(fVolume)
+
 		# Set up UI components
-		cMatrixUI = GM.GetMatrixUI()
-		self.nShIdx = cMatrixUI.AddShape(Shape.Circle, [0, 0], {'r' : Cell.nRadius})
-		self.nDrIdx = cMatrixUI.AddDrawableIQM('../models/circle.iqm', [0, 0], 2 * [Cell.nRadius], [0, 0, 0, 1], 0. )
+		self.nShIdx = GM.cMatrixUI.AddShape(Shape.Circle, [0, 0], {'r' : Cell.nRadius})
+		self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/circle.iqm', [0, 0], 2 * [Cell.nRadius], [0, 0, 0, 1], 0. )
+
 		# Set component IDs
 		self.SetComponentID()
+
+	# Mouse handler override
+	def OnLButtonUp(self):
+		print('here I go down the jope')
 
 # Rows will own a list of clips
 # and can have one active clip,
@@ -104,10 +109,10 @@ class Row(Entity):
 		super(Row, self).__init__(GM)
 
 		# Create UI components
-		cMatrixUI = GM.GetMatrixUI()
 		nRowX = Constants.nGap + Row.nHeaderW / 2
-		self.nShIdx = cMatrixUI.AddShape(Shape.AABB, [nRowX, nPosY], {'w' : Row.nHeaderW, 'h': Row.nHeaderH})
-		self.nDrIdx = cMatrixUI.AddDrawableIQM('../models/quad.iqm', [nRowX, nPosY], [Row.nHeaderW, Row.nHeaderH], clrOff, 0. )
+		self.nShIdx = GM.cMatrixUI.AddShape(Shape.AABB, [nRowX, nPosY], {'w' : Row.nHeaderW, 'h': Row.nHeaderH})
+		self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/quad.iqm', [nRowX, nPosY], [Row.nHeaderW, Row.nHeaderH], clrOff, 0. )
+
 		# Move cells to correct pos, set colors
 		self.clrOn = clrOn
 		self.clrOff = clrOff
@@ -134,11 +139,17 @@ class Row(Entity):
 
 			# Add to our list
 			self.liCells.append(cell)
+
 		# Set up play state
 		self.mActiveCell = None
 		self.mActiveCell = None
+
 		# Set Component IDs
 		self.SetComponentID()
+
+	# Mouse handler override
+	def OnLButtonUp(self):
+		print('here I go down the slope')
 
 # A column is like a Scene in Ableton
 # Rather than own a list of clips,
@@ -162,7 +173,7 @@ class Col(Entity):
 			raise RuntimeError('Creating column with no cells')
 
 		# Create UI components, set x pos to be that of the first cell
-		cMatrixUI = GM.GetMatrixUI()
+		cMatrixUI = GM.cMatrixUI
 		nPosX = liRows[0].liCells[0].GetShape().GetPosition()[0]
 		strDrName = 'ColTri'+str(self.nIdx)
 		diTriangleDetails = { 	'aX' : triVerts[0][0], 'aY' : triVerts[0][1],

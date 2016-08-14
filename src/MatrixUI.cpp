@@ -246,10 +246,6 @@ bool MatrixUI::InitDisplay( std::string strWindowName, vec4 v4ClearColor, std::m
 
 bool MatrixUI::GetIsOverlapping( Shape * pA, Shape * pB ) const
 {
-	auto it = m_CollisionBank.find( ColPair( pA, pB ) );
-	if ( it == m_CollisionBank.end() )
-	{
-		return false;
-	}
-	return it->second;
+	if ( pA && pB )
+		return pA->IsOverlapping( pB );
 }

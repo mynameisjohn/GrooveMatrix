@@ -149,7 +149,6 @@ class MouseManager(ButtonManager):
             if self.fnWheel is not None:
                 self.fnWheel(self, sdlEvent.wheel)
 
-
         return True
 
 # Input manager, owns a mouse and keyboard handler
@@ -161,10 +160,6 @@ class InputManager:
 
     # Handle some sdl2 event
     def HandleEvent(self, sdlEvent):
-        # Handle the quit event by setting the scene's quit flag
-        if sdlEvent.type == sdl2.events.SDL_QUIT:
-            self.cScene.SetQuitFlag(True)
-
         # Give key events to the keyboard manager
         if self.keyMgr is not None:
             self.keyMgr.HandleEvent(sdlEvent)
