@@ -98,6 +98,7 @@ class Cell(Entity):
 
 	# Mouse handler override
 	def OnLButtonUp(self):
+		print(self.cClip.GetName())
 		# I guess the voice ID is just the ent ID... why not
 		if self.mRow.mActiveCell is not None:
 			if self.mRow.mActiveCell == self:

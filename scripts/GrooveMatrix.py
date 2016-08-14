@@ -47,6 +47,7 @@ class GrooveMatrix:
         # Quit function
         def fnQuit(btn, keyMgr):
             nonlocal self
+            self.cClipLauncher.SetPlayPause(False)
             self.cMatrixUI.SetQuitFlag(True)
         keyQuit = Button(sdl2.keycode.SDLK_ESCAPE, fnUp = fnQuit)
         # Play/pause
@@ -72,6 +73,7 @@ class GrooveMatrix:
             for ent in self.setEntities:
                 if self.cMatrixUI.GetIsOverlapping(ent.GetShape().c_ptr, cMouseCirc.c_ptr):
                     ent.OnLButtonUp()
+                    return
             # Deactivate mouse circ
             cMouseCirc.SetIsActive(False)
         mouseMgr = MouseManager([Button(sdl2.SDL_BUTTON_LEFT, fnDown = fnLBDown, fnUp = fnLBUp)])
@@ -89,6 +91,7 @@ class GrooveMatrix:
     # post any messages needed to the clip launcher
     def Update(self):
         # Update ui, clip launcher
+        # (clip launcher locks mutex)
         self.cClipLauncher.Update()
         self.cMatrixUI.Update()
         self.cMatrixUI.Draw()
@@ -100,22 +103,29 @@ class GrooveMatrix:
         # if the clip launcher hasn't started yet,
         # maybe start it if one of our cells wants to play
         if self.cClipLauncher.GetPlayPause() == False:
+            # reset sample counters
             self.nCurSamplePos = 0
             self.nCurSamplePosInc = 0
             self.nNumBufsCompleted = 0
+
+            # determine which cells to play
             setOn = set()
             for row in self.diRows.values():
+                # returns True if turning on
                 if row.ExchangeActiveCell():
                     setOn.add(row.mActiveCell)
+
+            # Tell CL to play
             for c in setOn:
                 if c is not None:
-                    self.cClipLauncher.HandleCommand((clCMD.cmdStartVoice, c.cClip.c_ptr, 0, c.fVolume, c.nTriggerRes))
+                    self.cClipLauncher.HandleCommand((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+
+            # If anything done, start playing
             if len(setOn):
                 self.cClipLauncher.SetPlayPause(True)
                 return
 
         # Determine how many buffers have advanced, calculate increment
-        # (this involves update the C++ Loop Manager, which locks a mutex)
         nCurNumBufs = self.cClipLauncher.GetNumBufsCompleted()
         if nCurNumBufs > self.nNumBufsCompleted:
             nNumBufs = nCurNumBufs - self.nNumBufsCompleted
@@ -126,7 +136,7 @@ class GrooveMatrix:
         nNewSamplePos = self.nCurSamplePos + self.nCurSamplePosInc
         self.nCurSamplePosInc = 0
 
-        # ultimately the end result of this is a set
+        # ultimately the result of this is a set
         # of clips to turn on and a set to turn off
         setOn = set()
         setOff = set()
@@ -134,6 +144,7 @@ class GrooveMatrix:
             # Store the previous active cell
             curCell = row.mActiveCell
             if curCell is not None:
+                # If we'll cross the trigger position
                 nTrigger = curCell.nTriggerRes - self.nPreTrigger
                 if self.nCurSamplePos < nTrigger and nNewSamplePos >= nTrigger:
                     # If the active cell is changing
@@ -145,8 +156,10 @@ class GrooveMatrix:
                         # Turn on the new cells
                         if row.mActiveCell is not None:
                             setOn.add(row.mActiveCell)
+            # Going from nothing to something
             elif row.ExchangeActiveCell():
                 # Turn on the new cells
+                print('turning on', row.mActiveCell.cClip.GetName())
                 setOn.add(row.mActiveCell)
 
         # Update sample pos, maybe inc totalLoopCount and reset
@@ -157,15 +170,15 @@ class GrooveMatrix:
         # Construct the commands
         liCmds = []
         for c in setOn:
-            liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, 0, c.fVolume, c.nTriggerRes))
+            liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
         for c in setOff:
-            liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, 0, c.fVolume, c.nTriggerRes))
+            liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
 
         # Post to clip launcher
         if len(liCmds):
             self.cClipLauncher.HandleCommands(liCmds)
 
-    # To add a row, provide a name, colors, and list of cliips
+    # To add a row, provide a name, colors, and list of clips
     def AddRow(self, strName, clrOn, clrOff, liClips):
         # Determine the y pos of this row
         nRows = len(self.diRows.keys())
