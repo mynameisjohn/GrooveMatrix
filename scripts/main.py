@@ -1,8 +1,8 @@
 # Used for debugging
 # secret@localhost:5678
-# import ptvsd
-# ptvsd.enable_attach(secret = None)
-# ptvsd.wait_for_attach()
+#import ptvsd
+#ptvsd.enable_attach(secret = None)
+#ptvsd.wait_for_attach(30)
 
 import sdl2
 import ctypes
@@ -38,7 +38,7 @@ def Initialize(pMatrixUI, pClipLauncher):
         nFadeMs = 5
         strCD = '../audio/'
         return (strName, strCD+strName+'_head.wav', strCD+strName+'_tail.wav', nFadeMs )
-    diRowClips = {  'Drums' :    [formatClipTup('drum1')],
+    diRowClips = {  'Drums' :    [formatClipTup('drum1'), formatClipTup('drum2')],
                     'Bass' :     [formatClipTup('bass1')],
                     'Sustain' :  [formatClipTup('sus1')]}
 
@@ -58,7 +58,7 @@ def Initialize(pMatrixUI, pClipLauncher):
 
     # The window width and height are a function of the cells we'll have
     nCols = max(len(liCells) for liCells in diRowClips.values())
-    nWindowWidth = Constants.nGap + Row.nHeaderW + nCols * (Constants.nGap + 2 * Cell.nRadius)
+    nWindowWidth = 2 * Constants.nGap + Row.nHeaderW + nCols * (Constants.nGap + 2 * Cell.nRadius)
     nWindowHeight = Constants.nGap + len(diRowClips.keys()) * (Row.nHeaderH + Constants.nGap)
 
     # init the UI display

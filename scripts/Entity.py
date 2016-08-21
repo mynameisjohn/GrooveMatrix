@@ -75,7 +75,7 @@ class Entity:
 # Actual cliplauncher clip
 class Cell(Entity):
 	# Cells are a circle
-	nRadius = 50
+	nRadius = 25
 	def __init__(self, GM, row, cClip, fVolume):
 		# set up ID
 		super(Cell, self).__init__(GM)
@@ -91,7 +91,7 @@ class Cell(Entity):
 
 		# Set up UI components
 		self.nShIdx = GM.cMatrixUI.AddShape(Shape.Circle, [0, 0], {'r' : Cell.nRadius})
-		self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/circle.iqm', [0, 0], 2 * [Cell.nRadius], [0, 0, 0, 1], 0. )
+		self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/circle.iqm', [0, 0], 2 * [2*Cell.nRadius], [0, 0, 0, 1], 0. )
 
 		# Set component IDs
 		self.SetComponentID()
@@ -141,7 +141,7 @@ class Row(Entity):
 
 			# Determine x pos
 			liCellPos = [nCellPosX, nPosY]
-			nCellPosX += nCellPosDelta
+
 			# Set position for shape
 			cShape = cell.GetShape()
 			cShape.SetCenterPos(liCellPos)
@@ -149,7 +149,9 @@ class Row(Entity):
 			# Set position for drawable
 			cDrawable = cell.GetDrawable()
 			cDrawable.SetPos2D(liCellPos)
+
 			#cDrawable.SetColor(clrOff)
+			nCellPosX += nCellPosDelta
 
 			# Add to our list
 			self.liCells.append(cell)

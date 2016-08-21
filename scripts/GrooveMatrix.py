@@ -2,6 +2,8 @@
 from MatrixUI import MatrixUI
 import ClipLauncher as clCMD
 from ClipLauncher import ClipLauncher
+import Camera
+import Camera
 import Shape
 
 # All of the UI elements are entities
@@ -58,14 +60,22 @@ class GrooveMatrix:
         # Construct the keyboard manager
         keyMgr = KeyboardManager([keyQuit, keyPlayPause])
 
+        # Create ref to camera for fnLBDown to capture
+        cCamera = Camera.Camera(self.cMatrixUI.GetCameraPtr())
+
         # Mouse handling function
         # LButtonDown sets mouse circ active, moves to mousePos
         def fnLBDown(btn, mouseMgr):
-            nonlocal self
+            nonlocal self, cCamera
+            # Convert SDL mouse pos to screen pos
+            mX = mouseMgr.mousePos[0]
+            mY = cCamera.GetScreenHeight() - mouseMgr.mousePos[1]
+
             # Move mouse circle to pos, activate
             cMouseCirc = Shape.Shape(self.cMatrixUI.GetShape(self.nHitShapeIdx))
-            cMouseCirc.SetCenterPos(mouseMgr.mousePos)
+            cMouseCirc.SetCenterPos([mX, mY])
             cMouseCirc.SetIsActive(True)
+
         # LButtonDown sets mouse circ active, moves to mousePos
         def fnLBUp(btn, mouseMgr):
             nonlocal self
@@ -76,6 +86,7 @@ class GrooveMatrix:
                     return
             # Deactivate mouse circ
             cMouseCirc.SetIsActive(False)
+
         mouseMgr = MouseManager([Button(sdl2.SDL_BUTTON_LEFT, fnDown = fnLBDown, fnUp = fnLBUp)])
 
         # Construct input manager
@@ -83,6 +94,7 @@ class GrooveMatrix:
 
     def HandleEvent(self, sdlEvent):
         if sdlEvent.type == sdl2.events.SDL_QUIT:
+            self.cClipLauncher.SetPlayPause(False)
             self.cMatrixUI.SetQuitFlag(True)
         else:
             self.mInputManager.HandleEvent(sdlEvent)
@@ -178,8 +190,13 @@ class GrooveMatrix:
         if len(liCmds):
             self.cClipLauncher.HandleCommands(liCmds)
 
+    def GetCamera(self):
+        return Camera.Camera(self.cMatrixUI.GetCameraPtr())
+
     # To add a row, provide a name, colors, and list of clips
     def AddRow(self, strName, clrOn, clrOff, liClips):
+        nWindowHeight = self.GetCamera().GetScreenHeight()
+
         # Determine the y pos of this row
         nRows = len(self.diRows.keys())
         nPosY0 = Constants.nGap + Row.nHeaderH / 2
