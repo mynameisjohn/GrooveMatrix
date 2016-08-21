@@ -1,17 +1,19 @@
 # Used for debugging
 # secret@localhost:5678
-#import ptvsd
-#ptvsd.enable_attach(secret = None)
-#ptvsd.wait_for_attach(30)
+# import ptvsd
+# ptvsd.enable_attach(secret = None)
+# ptvsd.wait_for_attach(30)
 
 import sdl2
 import ctypes
+from collections import namedtuple
 
 import Camera
 import Shader
 import Drawable
 from MatrixUI import MatrixUI
 from ClipLauncher import ClipLauncher, Clip
+from Entity import Row
 
 from Util import Constants, ctype_from_addr
 from GrooveMatrix import Row, Cell, GrooveMatrix
@@ -32,32 +34,60 @@ def Initialize(pMatrixUI, pClipLauncher):
     if cClipLauncher.Init(ctypes.addressof(audioSpec)) == False:
         return False
 
+    def makeColor(ix):
+        dif=.4
+        clrOn = [.5 - dif if i==ix else 0 for i in range(3)]+[1]
+        clrOff = [.5 + dif if i==ix else 0 for i in range(3)]+[1]
+        return (clrOn, clrOff)
+
     # Declare all clips (clip creation args as tuples)
     # formatClipTup sets up args for RegisterClip
     def formatClipTup(strName):
         nFadeMs = 5
         strCD = '../audio/'
         return (strName, strCD+strName+'_head.wav', strCD+strName+'_tail.wav', nFadeMs )
-    diRowClips = {  'Drums' :    [formatClipTup('drum1'), formatClipTup('drum2')],
-                    'Bass' :     [formatClipTup('bass1')],
-                    'Sustain' :  [formatClipTup('sus1')]}
+    diRowClips = {  'Drums' :       Row.RowData(liClipData = [formatClipTup('drum1'), formatClipTup('drum2')],
+                                                clrOff = makeColor(0)[0],
+                                                clrOn = makeColor(0)[1]),
+                    'Bass' :        Row.RowData(liClipData = [formatClipTup('bass1')],
+                                                clrOff = makeColor(1)[0],
+                                                clrOn =  makeColor(1)[1]),
+                    'Sustain' :     Row.RowData(liClipData = [formatClipTup('sus1')],
+                                                clrOff =  makeColor(2)[0],
+                                                clrOn =  makeColor(2)[1])
+                }
+
+    #diRowClips = {
+    #    'Drums' :   [formatClipTup('drum_gr_'+str(i) for i in range(3)],
+    #    'Bass' :    [formatClipTup('bass_gr_1')],
+    #    'FastArp' : [formatClipTup('fastarp_'+str(i) for i in range(3)],
+    #    'SlowArp' : [formatClipTup('fastarp_'+str(i) for i in range(3)],
+    #    'DelayArp' :[formatClipTup('delayarp_'+str(i) for i in range(2))],
+    #    'HardArp' : [formatClipTup('hardarp_1')],
+    #    'Batman' :  [formatClipTup('batman_1')],
+    #    'Air' :     [formatClipTup('air_1')],
+    #    'Horu' :    [formatClipTup('horu_1')],
+    #    'Nice' :    [formatClipTup('nice_1')],
+    #    'Guitar' :  [formatClipTup('guitar_'+str(i) for i in range(6))
+    #    formatClipTup('nice_1')],
+    #}
 
     # Transform each rowname / tup pair into a rowname / cClip pair
     for rowName in diRowClips.keys():
         # Try and get a cClip
         liClips = []
-        for tupClip in diRowClips[rowName]:
+        liClipData = diRowClips[rowName].liClipData
+        for ix in range(len(liClipData)):
             # If we can register the clip
+            tupClip = liClipData[ix]
             if cClipLauncher.RegisterClip(*tupClip):
-                # Get the cClip and store in a list
-                liClips.append(Clip(cClipLauncher.GetClip(tupClip[0])))
-        diRowClips[rowName] = liClips
+                liClipData[ix] = Clip(cClipLauncher.GetClip(tupClip[0]))
 
-    # Remove any empty clips
-    diRowClips = {k : v for k, v in diRowClips.items() if len(v)}
+    # Remove any empty rows
+    diRowClips = {k : v for k, v in diRowClips.items() if len(v.liClipData)}
 
     # The window width and height are a function of the cells we'll have
-    nCols = max(len(liCells) for liCells in diRowClips.values())
+    nCols = max(len(rd.liClipData) for rd in diRowClips.values())
     nWindowWidth = 2 * Constants.nGap + Row.nHeaderW + nCols * (Constants.nGap + 2 * Cell.nRadius)
     nWindowHeight = Constants.nGap + len(diRowClips.keys()) * (Row.nHeaderH + Constants.nGap)
 
@@ -96,8 +126,8 @@ def Initialize(pMatrixUI, pClipLauncher):
     # Add rows to groove Matrix
     clrOff = [.2,.2,.2,1.]
     clrOn = [.6,.6,.6,1.]
-    for rowName, liClips in diRowClips.items():
-        g_GrooveMatrix.AddRow(rowName, clrOn, clrOff, liClips)
+    for rowName, rowData in diRowClips.items():
+        g_GrooveMatrix.AddRow(rowName, rowData)
 
     return True
 

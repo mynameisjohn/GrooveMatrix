@@ -194,7 +194,7 @@ class GrooveMatrix:
         return Camera.Camera(self.cMatrixUI.GetCameraPtr())
 
     # To add a row, provide a name, colors, and list of clips
-    def AddRow(self, strName, clrOn, clrOff, liClips):
+    def AddRow(self, strName, rowData):
         nWindowHeight = self.GetCamera().GetScreenHeight()
 
         # Determine the y pos of this row
@@ -203,7 +203,7 @@ class GrooveMatrix:
         nPosY = nPosY0 + nRows * (Row.nHeaderH + Constants.nGap)
 
         # Construct row and add to dict (Cells constructed by Row)
-        r = Row(self, liClips, clrOn, clrOff, nPosY)
+        r = Row(self, rowData, nPosY)
 
         # Store row and all its cells in one container
         self.diRows[strName] = r

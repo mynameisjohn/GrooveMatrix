@@ -19,6 +19,8 @@ import Drawable
 
 from Util import Constants
 
+from collections import namedtuple
+
 # All entities will have a unique ID,
 # A drawable and shape component,
 # a way of dealing with mouse clicks
@@ -117,27 +119,29 @@ class Row(Entity):
 	nHeaderW = 200	# width of row header
 	nHeaderH = 50	# height of row header
 
+	RowData = namedtuple('RowData', ('liClipData', 'clrOn', 'clrOff'))
+
 	# Constructor takes list of cells and GM, on/off color
-	def __init__(self, GM, liClips, clrOn, clrOff, nPosY):
+	def __init__(self, GM, rowData, nPosY):
 		# Get ID
 		super(Row, self).__init__(GM)
 
 		# Create UI components
 		nRowX = Constants.nGap + Row.nHeaderW / 2
 		self.nShIdx = GM.cMatrixUI.AddShape(Shape.AABB, [nRowX, nPosY], {'w' : Row.nHeaderW, 'h': Row.nHeaderH})
-		self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/quad.iqm', [nRowX, nPosY], [Row.nHeaderW, Row.nHeaderH], clrOff, 0. )
+		self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/quad.iqm', [nRowX, nPosY], [Row.nHeaderW, Row.nHeaderH], rowData.clrOff, 0. )
 
 		# Move cells to correct pos, set colors
-		self.clrOn = clrOn
-		self.clrOff = clrOff
+		self.clrOn = rowData.clrOn
+		self.clrOff = rowData.clrOff
 		nCellPosX = Row.nHeaderW + 2 * Constants.nGap + Cell.nRadius
 		nCellPosDelta = 2 * Cell.nRadius + Constants.nGap
 
 		# Construct cells from cClips
 		self.liCells = []
-		for i in range(len(liClips)):
+		for clip in rowData.liClipData:
 			# Construct the cell
-			cell = Cell(GM, self, liClips[i], 1.)
+			cell = Cell(GM, self, clip, 1.)
 
 			# Determine x pos
 			liCellPos = [nCellPosX, nPosY]
@@ -150,7 +154,7 @@ class Row(Entity):
 			cDrawable = cell.GetDrawable()
 			cDrawable.SetPos2D(liCellPos)
 
-			#cDrawable.SetColor(clrOff)
+			cDrawable.SetColor(rowData.clrOff)
 			nCellPosX += nCellPosDelta
 
 			# Add to our list
@@ -179,6 +183,7 @@ class Row(Entity):
 	def ExchangeActiveCell(self):
 		if self.mPendingCell is not self.mActiveCell:
 			self.mActiveCell = self.mPendingCell
+			self.mActiveCell.GetDrawable().SetColor(self.clrOn)
 			return True
 		return False
 
