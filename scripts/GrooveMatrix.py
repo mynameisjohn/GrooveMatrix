@@ -8,6 +8,8 @@ import Shape
 
 # All of the UI elements are entities
 from Entity import Cell, Row
+import RowState
+import CellState
 
 # Input manager... handles input
 from InputManager import InputManager, MouseManager, KeyboardManager, Button
@@ -44,6 +46,11 @@ class GrooveMatrix:
         # we wait to be remaining in the current playing
         # cell before we flush any changes to the CL
         self.nPreTrigger = 3 * self.cClipLauncher.GetBufferSize()
+
+        # Our entities will tell us what to turn on/off,
+        # and we clear these sets in Update
+        self.setOn = set()
+        self.setOff = set()
 
         # construct the keyboard button handler functions
         # Quit function
@@ -99,6 +106,21 @@ class GrooveMatrix:
         else:
             self.mInputManager.HandleEvent(sdlEvent)
 
+    def StartCell(self, cell):
+        self.setOn.add(cell)
+
+    def StopCell(self, cell):
+        self.setOff.add(cell)
+
+    def GetCurrentSamplePos(self):
+        return self.nCurSamplePos
+
+    def GetCurrentSamplePosInc(self):
+        return self.nCurSamplePosInc
+
+    def GetPreTrigger(self):
+        return self.nPreTrigger
+
     # Go through and update drawables,
     # post any messages needed to the clip launcher
     def Update(self):
@@ -108,34 +130,39 @@ class GrooveMatrix:
         self.cMatrixUI.Update()
         self.cMatrixUI.Draw()
 
-        # Update all our entities
-        for ent in self.setEntities:
-            ent.Update()
-
         # if the clip launcher hasn't started yet,
-        # maybe start it if one of our cells wants to play
+        # maybe start it if some cells wants to play
         if self.cClipLauncher.GetPlayPause() == False:
             # reset sample counters
             self.nCurSamplePos = 0
             self.nCurSamplePosInc = 0
             self.nNumBufsCompleted = 0
+            self.setOn = set()
+            self.setOff = set()
 
-            # determine which cells to play
-            setOn = set()
+            # Update all rows, determine if any should play
             for row in self.diRows.values():
-                # returns True if turning on
-                if row.ExchangeActiveCell():
-                    setOn.add(row.mActiveCell)
+                row.Update()
+                if isinstance(row.GetActiveState(), RowState.Pending):
+                    self.nCurSamplePos = row.GetTriggerRes() - self.nPreTrigger - 1
+                    self.nCurSamplePosInc = 1
+                    row.Update()
 
-            # Tell CL to play
-            for c in setOn:
-                if c is not None:
-                    self.cClipLauncher.HandleCommand((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+            self.nCurSamplePos = 0
+            self.nCurSamplePosInc = 0
 
-            # If anything done, start playing
-            if len(setOn):
+            # If there is anything to turn on
+            if len(self.setOn):
+                liCmds = []
+                # Turn stuff on and start playing
+                for c in self.setOn:
+                    if c is not None:
+                        liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+                self.cClipLauncher.HandleCommands(liCmds)
                 self.cClipLauncher.SetPlayPause(True)
-                return
+
+            # Get out
+            return
 
         # Determine how many buffers have advanced, calculate increment
         nCurNumBufs = self.cClipLauncher.GetNumBufsCompleted()
@@ -144,51 +171,79 @@ class GrooveMatrix:
             self.nCurSamplePosInc += nNumBufs * self.cClipLauncher.GetBufferSize()
             self.nNumBufsCompleted = nCurNumBufs
 
-        # Compute the new sample pos, zero inc, don't update yet
-        nNewSamplePos = self.nCurSamplePos + self.nCurSamplePosInc
-        self.nCurSamplePosInc = 0
-
-        # ultimately the result of this is a set
-        # of clips to turn on and a set to turn off
-        setOn = set()
-        setOff = set()
+        # Allow all cells/rows to update themselves given this increment
         for row in self.diRows.values():
-            # Store the previous active cell
-            curCell = row.mActiveCell
-            if curCell is not None:
-                # If we'll cross the trigger position
-                nTrigger = curCell.nTriggerRes - self.nPreTrigger
-                if self.nCurSamplePos < nTrigger and nNewSamplePos >= nTrigger:
-                    # If the active cell is changing
-                    if row.ExchangeActiveCell():
-                        # If the original wasn't None, turn it off
-                        if curCell is not None:
-                            print('turning', curCell, 'off')
-                            setOff.add(curCell)
-                        # Turn on the new cells
-                        if row.mActiveCell is not None:
-                            setOn.add(row.mActiveCell)
-            # Going from nothing to something
-            elif row.ExchangeActiveCell():
-                # Turn on the new cells
-                print('turning on', row.mActiveCell.cClip.GetName())
-                setOn.add(row.mActiveCell)
+            row.Update()
 
-        # Update sample pos, maybe inc totalLoopCount and reset
-        self.nCurSamplePos = nNewSamplePos
-        if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
-            self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
-
-        # Construct the commands
+        # Construct commands for any changing voices
         liCmds = []
-        for c in setOn:
+        for c in self.setOn:
             liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
-        for c in setOff:
+        for c in self.setOff:
             liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
 
         # Post to clip launcher
         if len(liCmds):
             self.cClipLauncher.HandleCommands(liCmds)
+
+        # Clear these sets
+        self.setOn = set()
+        self.setOff = set()
+
+        # Update sample pos, maybe inc totalLoopCount and reset
+        self.nCurSamplePos += self.nCurSamplePosInc
+        self.nCurSamplePosInc = 0
+        if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
+            self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
+
+        # Compute the new sample pos, zero inc, don't update yet
+        # nNewSamplePos = self.nCurSamplePos + self.nCurSamplePosInc
+        # self.nCurSamplePosInc = 0
+
+        # # ultimately the result of this is a set
+        # # of clips to turn on and a set to turn off
+        # setOn = set()
+        # setOff = set()
+        # for row in self.diRows.values():
+        #     # Store the previous active cell
+        #     curCell = row.mActiveCell
+        #     if curCell is not None:
+        #         # If we'll cross the trigger position
+        #         nTrigger = curCell.nTriggerRes - self.nPreTrigger
+        #         if self.nCurSamplePos < nTrigger and nNewSamplePos >= nTrigger:
+        #             # If the active cell is changing
+        #             if row.ExchangeActiveCell():
+        #                 # If the original wasn't None, turn it off
+        #                 if curCell is not None:
+        #                     print('turning', curCell, 'off')
+        #                     setOff.add(curCell)
+        #                 # Turn on the new cells
+        #                 if row.mActiveCell is not None:
+        #                     setOn.add(row.mActiveCell)
+        #     # Going from nothing to something
+        #     elif row.ExchangeActiveCell():
+        #         # This is broken because it sets
+        #         # the cell to active before the
+        #         # trigger res is hit.
+        #         # Turn on the new cells
+        #         print('turning on', row.mActiveCell.cClip.GetName())
+        #         setOn.add(row.mActiveCell)
+        #
+        # # Update sample pos, maybe inc totalLoopCount and reset
+        # self.nCurSamplePos = nNewSamplePos
+        # if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
+        #     self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
+        #
+        # # Construct the commands
+        # liCmds = []
+        # for c in setOn:
+        #     liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+        # for c in setOff:
+        #     liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+        #
+        # # Post to clip launcher
+        # if len(liCmds):
+        #     self.cClipLauncher.HandleCommands(liCmds)
 
     def GetCamera(self):
         return Camera.Camera(self.cMatrixUI.GetCameraPtr())

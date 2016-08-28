@@ -121,15 +121,19 @@ void Voice::SetPending( const size_t uTriggerRes, bool bLoop /*= false*/ )
 		case EState::Pending:
 			if ( bLoop == false )
 				eNextState = EState::OneShot;
+			return;
 		case EState::TailPending:
 			if ( bLoop == false )
 				eNextState = EState::TailOneShot;
+			return;
 		case EState::OneShot:
 			if ( bLoop )
 				eNextState = EState::Pending;
+			return;
 		case EState::TailOneShot:
 			if ( bLoop )
 				eNextState = EState::TailOneShot;
+			return;
 			break;
 
 			// If we are playing in some capacity, get out
@@ -297,7 +301,7 @@ void Voice::RenderData( float * const pMixBuffer, const size_t uSamplesDesired, 
 
 				// If we're currently mixing the tail, and we didn't overlap with the head, jump down
 				if ( bTailHeadOverlap == false )
-					goto Case_Tail;
+						goto Case_Tail;
 
 				// Otherwise start mixing
 				break;

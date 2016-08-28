@@ -127,8 +127,9 @@ bool ClipLauncher::RegisterClip( std::string strClipName, std::string strHeadFil
 			// Construct the clip
 			const size_t uNumSamplesInHead = uNumBytesInHead / sizeof( float );
 			const size_t uNumSamplesInTail = uNumBytesInTail / sizeof( float );
+			const size_t uFadeDurationSamples = (size_t) (uFadeDurationMS *(m_pAudioSpec->freq / 1000.f));
 			m_uMaxSampleCount = std::max( m_uMaxSampleCount, uNumSamplesInHead );
-			m_mapClips[strClipName] = Clip( strClipName, pSoundBuffer, uNumSamplesInHead, pTailBuffer, uNumSamplesInTail, uFadeDurationMS );
+			m_mapClips[strClipName] = Clip( strClipName, pSoundBuffer, uNumSamplesInHead, pTailBuffer, uNumSamplesInTail, uFadeDurationSamples );
 			return true;
 		}
 		else

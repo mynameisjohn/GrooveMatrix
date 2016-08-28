@@ -14,10 +14,15 @@ Conventions:
 
 import abc
 
+import networkx as nx
+
 import Shape
 import Drawable
 
 from Util import Constants
+import CellState
+import RowState
+import StateGraph
 
 from collections import namedtuple
 
@@ -39,16 +44,16 @@ class Entity:
 	# Constructor takes in groove matrix instance
 	def __init__(self, GM):
 		self.nID = Entity.NewID()
-		self.cGM = GM
+		self.mGM = GM
 
 		self.nShIdx = -1
 		self.nDrIdx = -1
 
 	def GetShape(self):
-		return Shape.Shape(self.cGM.cMatrixUI.GetShape(self.nShIdx))
+		return Shape.Shape(self.mGM.cMatrixUI.GetShape(self.nShIdx))
 
 	def GetDrawable(self):
-		return Drawable.Drawable(self.cGM.cMatrixUI.GetDrawable(self.nDrIdx))
+		return Drawable.Drawable(self.mGM.cMatrixUI.GetDrawable(self.nDrIdx))
 
 	def SetComponentID(self):
 		self.GetShape().SetEntID(self.nID)
@@ -98,15 +103,54 @@ class Cell(Entity):
 		# Set component IDs
 		self.SetComponentID()
 
+		# Create state graph nodes
+		pending = CellState.Pending(self)
+		playing = CellState.Playing(self)
+		stopped = CellState.Stopped(self)
+
+		# Create di graph and add states
+		G = nx.DiGraph()
+		G.add_edge(pending, playing)
+		G.add_edge(pending, stopped)
+		G.add_edge(stopped, pending)
+		G.add_edge(playing, stopped)
+
+		# The graph advance function, dumb for now
+		def fnAdvance(SG):
+			nonlocal self, pending, playing, stopped
+			if self.mNextState is not self.GetActiveState():
+				if self.mNextState in self.mSG.G.neighbors(self.mSG.activeState):
+					return self.mNextState
+			return self.GetActiveState()
+
+		# Create state graph member, init state to stopped
+		self.mSG =  StateGraph.StateGraph(G, fnAdvance, stopped)
+		self.mNextState = self.GetActiveState()
+
+	def SetNextState(self, stateType):
+		self.mNextState = stateType(self)
+
+	def GetActiveState(self):
+		return self.mSG.GetActiveState()
+
+	def GetRow(self):
+		return self.mRow
+
 	# Mouse handler override
 	def OnLButtonUp(self):
 		print(self.cClip.GetName())
-		# I guess the voice ID is just the ent ID... why not
-		if self.mRow.mActiveCell is not None:
-			if self.mRow.mActiveCell == self:
-				self.mRow.SetPendingCell(None)
-				return
-		self.mRow.SetPendingCell(self)
+		if not(isinstance(self.mSG.GetActiveState(), StateGraph.State)):
+			raise ValueError('Error! Invalid cell state!')
+		self.GetActiveState().OnLButtonUp()
+		# # I guess the voice ID is just the ent ID... why not
+		# if self.mRow.mActiveCell is not None:
+		# 	if self.mRow.mActiveCell == self:
+		# 		self.mRow.SetPendingCell(None)
+		# 		return
+		# self.mRow.SetPendingCell(self)
+
+	def Update(self):
+		self.mSG.AdvanceState()
 
 # Rows will own a list of clips
 # and can have one active clip,
@@ -167,6 +211,59 @@ class Row(Entity):
 		# Set Component IDs
 		self.SetComponentID()
 
+		# Create state graph nodes
+		pending = RowState.Pending(self)
+		playing = RowState.Playing(self)
+		stopped = RowState.Stopped(self)
+
+		# Create di graph and add states
+		G = nx.DiGraph()
+		G.add_edge(pending, playing)
+		G.add_edge(pending, stopped)
+		G.add_edge(stopped, pending)
+		G.add_edge(playing, stopped)
+
+		# The graph advance function, dumb for now
+		self.mNextState = None
+		def fnAdvance(SG):
+			nonlocal self, pending, playing, stopped
+			# If stopped and we have a pending cell, we're now pending
+			if self.GetActiveState() == stopped and self.mPendingCell is not None:
+				return pending
+
+			# Determine if our trigger res will be hit
+			nCurPos = self.mGM.GetCurrentSamplePos()
+			nNewPos = nCurPos + self.mGM.GetCurrentSamplePosInc()
+			nTrigger = self.GetTriggerRes() - self.mGM.GetPreTrigger()
+			if nCurPos < nTrigger and nNewPos >= nTrigger:
+				# If we're pending, now we're playing
+				if self.GetActiveState() == pending:
+					return playing
+				# If we're playing and the pending is None, we're stopped
+				elif self.GetActiveState() == playing and self.mPendingState is None:
+					return stopped
+
+			# Nothing to be done, return current
+			return self.GetActiveState()
+
+		# Create state graph member, init state to stopped
+		self.mSG =  StateGraph.StateGraph(G, fnAdvance, stopped)
+
+	def SetPendingCell(self, cell):
+		if cell not in self.liCells:
+			raise RuntimeError('Pending Cell not in row!')
+		self.mPendingCell = cell
+
+	def GetActiveState(self):
+		return self.mSG.GetActiveState()
+
+	def GetTriggerRes(self):
+		# Return our active cell's if possible
+		if self.mActiveCell is not None:
+			return self.mActiveCell.GetTriggerRes()
+		# Otherwise take it to be the shortest of all
+		return min(c.nTriggerRes for c in self.liCells)
+
 	# Mouse handler override
 	def OnLButtonUp(self):
 		print('here I go down the slope')
@@ -186,6 +283,17 @@ class Row(Entity):
 			self.mActiveCell.GetDrawable().SetColor(self.clrOn)
 			return True
 		return False
+
+	def GetPendingCell(self):
+		return self.mPendingCell
+
+	def GetActiveCell(self):
+		return self.mPendingCell
+
+	def Update(self):
+		self.mSG.AdvanceState()
+		for cell in self.liCells:
+			cell.Update()
 
 # A column is like a Scene in Ableton
 # Rather than own a list of clips,
