@@ -240,7 +240,7 @@ class Row(Entity):
 				if self.GetActiveState() == pending:
 					return playing
 				# If we're playing and the pending is None, we're stopped
-				elif self.GetActiveState() == playing and self.mPendingState is None:
+				elif self.GetActiveState() == playing and self.mPendingCell is None:
 					return stopped
 
 			# Nothing to be done, return current
