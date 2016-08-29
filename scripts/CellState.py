@@ -50,6 +50,7 @@ class Playing(State):
 
     @contextlib.contextmanager
     def Activate(self, SG, prevState):
+        self.mCell.mRow.mActiveCell = self.mCell
         # set color to on
         self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOn)
         # If the previous state was pending,

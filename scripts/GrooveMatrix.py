@@ -35,22 +35,7 @@ class GrooveMatrix:
         self.diRows = {}
         self.setEntities = set()
 
-        # The current sample pos is incremented by
-        # the curSamplePos inc, which is a multiple of
-        # the loop manager's bufsize (every buf adds to inc)
-        self.nCurSamplePos = 0
-        self.nCurSamplePosInc = 0
-        self.nNumBufsCompleted = 0
-
-        # the preTrigger is the amount of samples
-        # we wait to be remaining in the current playing
-        # cell before we flush any changes to the CL
-        self.nPreTrigger = 3 * self.cClipLauncher.GetBufferSize()
-
-        # Our entities will tell us what to turn on/off,
-        # and we clear these sets in Update
-        self.setOn = set()
-        self.setOff = set()
+        self.Reset()
 
         # construct the keyboard button handler functions
         # Quit function
@@ -121,6 +106,24 @@ class GrooveMatrix:
     def GetPreTrigger(self):
         return self.nPreTrigger
 
+    def Reset(self):
+        # The current sample pos is incremented by
+        # the curSamplePos inc, which is a multiple of
+        # the loop manager's bufsize (every buf adds to inc)
+        self.nCurSamplePos = 0
+        self.nCurSamplePosInc = 0
+        self.nNumBufsCompleted = 0
+
+        # the preTrigger is the amount of samples
+        # we wait to be remaining in the current playing
+        # cell before we flush any changes to the CL
+        self.nPreTrigger = 3 * self.cClipLauncher.GetBufferSize()
+
+        # Our entities will tell us what to turn on/off,
+        # and we clear these sets in Update
+        self.setOn = set()
+        self.setOff = set()
+
     # Go through and update drawables,
     # post any messages needed to the clip launcher
     def Update(self):
@@ -134,11 +137,7 @@ class GrooveMatrix:
         # maybe start it if some cells wants to play
         if self.cClipLauncher.GetPlayPause() == False:
             # reset sample counters
-            self.nCurSamplePos = 0
-            self.nCurSamplePosInc = 0
-            self.nNumBufsCompleted = 0
-            self.setOn = set()
-            self.setOff = set()
+            self.Reset()
 
             # Update all rows, determine if any should play
             for row in self.diRows.values():
@@ -158,6 +157,7 @@ class GrooveMatrix:
                 for c in self.setOn:
                     if c is not None:
                         liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+                self.Reset()
                 self.cClipLauncher.HandleCommands(liCmds)
                 self.cClipLauncher.SetPlayPause(True)
 

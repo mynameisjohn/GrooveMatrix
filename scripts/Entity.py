@@ -59,6 +59,9 @@ class Entity:
 		self.GetShape().SetEntID(self.nID)
 		self.GetDrawable().SetEntID(self.nID)
 
+	def GetGrooveMatrix(self):
+		return self.mGM
+
 	@abc.abstractmethod
 	def OnLButtonUp(self):
 		pass
@@ -127,14 +130,18 @@ class Cell(Entity):
 		self.mSG =  StateGraph.StateGraph(G, fnAdvance, stopped)
 		self.mNextState = self.GetActiveState()
 
-	def SetNextState(self, stateType):
+	def SetState(self, stateType):
 		self.mNextState = stateType(self)
+		self.mSG.AdvanceState()
 
 	def GetActiveState(self):
 		return self.mSG.GetActiveState()
 
 	def GetRow(self):
 		return self.mRow
+
+	def GetTriggerRes(self):
+		return self.nTriggerRes
 
 	# Mouse handler override
 	def OnLButtonUp(self):
@@ -288,7 +295,7 @@ class Row(Entity):
 		return self.mPendingCell
 
 	def GetActiveCell(self):
-		return self.mPendingCell
+		return self.mActiveCell
 
 	def Update(self):
 		self.mSG.AdvanceState()
