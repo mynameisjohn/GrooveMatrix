@@ -156,7 +156,7 @@ class GrooveMatrix:
                 # Turn stuff on and start playing
                 for c in self.setOn:
                     if c is not None:
-                        liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+                        liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.nID, c.fVolume, c.nTriggerRes))
                 self.Reset()
                 self.cClipLauncher.HandleCommands(liCmds)
                 self.cClipLauncher.SetPlayPause(True)
@@ -178,9 +178,9 @@ class GrooveMatrix:
         # Construct commands for any changing voices
         liCmds = []
         for c in self.setOn:
-            liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+            liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.nID, c.fVolume, c.nTriggerRes))
         for c in self.setOff:
-            liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
+            liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, c.nID, c.fVolume, c.nTriggerRes))
 
         # Post to clip launcher
         if len(liCmds):

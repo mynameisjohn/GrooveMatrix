@@ -131,8 +131,9 @@ class Cell(Entity):
 		self.mNextState = self.GetActiveState()
 
 	def SetState(self, stateType):
-		self.mNextState = stateType(self)
-		self.mSG.AdvanceState()
+		if not isinstance(self.GetActiveState(), stateType):
+			self.mNextState = stateType(self)
+			self.mSG.AdvanceState()
 
 	def GetActiveState(self):
 		return self.mSG.GetActiveState()
@@ -247,8 +248,12 @@ class Row(Entity):
 				if self.GetActiveState() == pending:
 					return playing
 				# If we're playing and the pending is None, we're stopped
-				elif self.GetActiveState() == playing and self.mPendingCell is None:
-					return stopped
+				elif self.GetActiveState() == playing:
+					if self.mPendingCell is None:
+						return stopped
+					elif self.mPendingCell is not self.GetActiveCell():
+						self.GetActiveCell().SetState(CellState.Stopped)
+						self.mPendingCell.SetState(CellState.Playing)
 
 			# Nothing to be done, return current
 			return self.GetActiveState()
@@ -257,8 +262,11 @@ class Row(Entity):
 		self.mSG =  StateGraph.StateGraph(G, fnAdvance, stopped)
 
 	def SetPendingCell(self, cell):
-		if cell not in self.liCells:
-			raise RuntimeError('Pending Cell not in row!')
+		if cell is not None:
+			if cell not in self.liCells:
+				raise RuntimeError('Pending Cell not in row!')
+			# I foresee some problems with updating before assigning...
+			cell.SetState(CellState.Pending)
 		self.mPendingCell = cell
 
 	def GetActiveState(self):
@@ -275,14 +283,14 @@ class Row(Entity):
 	def OnLButtonUp(self):
 		print('here I go down the slope')
 
-	def SetPendingCell(self, cell):
-		if cell is None:
-			self.mPendingCell = None
-			return True
-		if cell in self.liCells:
-			self.mPendingCell = cell
-			return True
-		return False
+	# def SetPendingCell(self, cell):
+	# 	if cell is None:
+	# 		self.mPendingCell = None
+	# 		return True
+	# 	if cell in self.liCells:
+	# 		self.mPendingCell = cell
+	# 		return True
+	# 	return False
 
 	def ExchangeActiveCell(self):
 		if self.mPendingCell is not self.mActiveCell:
