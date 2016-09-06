@@ -1,10 +1,15 @@
 import StateGraph
-from Cell import MatrixEntity, Cell
+from MatrixEntity import MatrixEntity
+from Util import Constants
+
+import Shape
 
 import contextlib
+import networkx as nx
+from collections import namedtuple
 
 class Row(MatrixEntity):
-    # Cells are represented by a rect
+    # Rows are represented by a rect
     nHeaderW = 200	# width of row header
     nHeaderH = 50	# height of row header
 
@@ -58,9 +63,9 @@ class Row(MatrixEntity):
         self.SetComponentID()
 
         # Create state graph nodes
-        pending = State.Pending(self)
-        playing = State.Playing(self)
-        stopped = State.Stopped(self)
+        pending = Row.State.Pending(self)
+        playing = Row.State.Playing(self)
+        stopped = Row.State.Stopped(self)
 
         # Create di graph and add states
         G = nx.DiGraph()
@@ -152,8 +157,8 @@ class Row(MatrixEntity):
         # Return our active cell's if possible
         if self.mActiveCell is not None:
             return self.mActiveCell.GetTriggerRes()
-            # Otherwise take it to be the shortest of all (?)
-            return min(c.nTriggerRes for c in self.liCells)
+        # Otherwise take it to be the shortest of all (?)
+        return min(c.nTriggerRes for c in self.liCells)
 
     # Mouse handler override
     def OnLButtonUp(self):
@@ -187,7 +192,7 @@ class Row(MatrixEntity):
         # Pending state means no cells are playing and one is pending
         class Pending(_state):
             def __init__(self, row):
-                _state.__init__(self, row, 'Pending')
+                super(type(self), self).__init__(row, 'Pending')
 
             # State lifetime management
             @contextlib.contextmanager
@@ -201,14 +206,14 @@ class Row(MatrixEntity):
         # The Row.Stopped state means all cells in row are stopped
         class Stopped(_state):
             def __init__(self, row):
-                _state.__init__(self, row, 'Stopped')
+               super(type(self), self).__init__(row, 'Stopped')
 
             # When the stopped state is activated, the active cell
             # will be set to stopped and the color will change
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
                 # Our pending cell should have been None
-                if self.mPendingCell is not None:
+                if self.mRow.GetPendingCell() is not None:
                     raise RuntimeError('Weird state transition!')
                 # Advance, which sets active to stopped and assigns None
                 self.mRow._makePendingActive()
@@ -220,7 +225,7 @@ class Row(MatrixEntity):
         # The row playing state means one of our cells is playing
         class Playing(_state):
             def __init__(self, row):
-                _state.__init__(self, row, 'Playing')
+                super(type(self), self).__init__(row, 'Playing')
 
             # When the Playing state is activated, the pending cell
             # will be set to playing and the color will change
@@ -230,7 +235,7 @@ class Row(MatrixEntity):
                 if any(isinstance(c, Cell.State.Playing) for c in self.mRow.liCells):
                     raise RuntimeError('Weird state transition!')
                 # I just want to try and catch everything
-                if self.mPendingCell is None or self.mActiveCell is not None:
+                if self.mRow.GetPendingCell() is None or self.mRow.GetActiveCell() is not None:
                     raise RuntimeError('Weird state transition!')
                 # Make pending cell active
                 self._makePendingActive()
@@ -238,3 +243,5 @@ class Row(MatrixEntity):
                 self.mRow.GetDrawable().SetColor(self.mRow.clrOn)
                 yield
                 # No exit for now
+
+from Cell import Cell

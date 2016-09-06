@@ -1,3 +1,8 @@
+import abc
+
+import Drawable
+import Shape
+
 class MatrixEntity:
 	# class variable that keeps a counter
 	# of entities created, which is useful
@@ -5,14 +10,14 @@ class MatrixEntity:
 	nEntsCreated = 0
 	# Increment the class ID counter and return the old
 	def NewID():
-		ret = Entity.nEntsCreated
-		Entity.nEntsCreated += 1
+		ret = MatrixEntity.nEntsCreated
+		MatrixEntity.nEntsCreated += 1
 		return ret
 
 	# Constructor takes in groove matrix instance
 	def __init__(self, GM):
 	    # Set ID, store GM
-		self.nID = Entity.NewID()
+		self.nID = MatrixEntity.NewID()
 		self.mGM = GM
 
 		# Init these to -1
@@ -44,6 +49,10 @@ class MatrixEntity:
 	# All should be clickable
 	@abc.abstractmethod
 	def OnLButtonUp(self):
+		pass
+
+	@abc.abstractmethod
+	def Update(self):
 		pass
 
 	# These are probably worthwhile

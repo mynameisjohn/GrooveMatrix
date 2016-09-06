@@ -1,8 +1,8 @@
 # Used for debugging
 # secret@localhost:5678
-# import ptvsd
-# ptvsd.enable_attach(secret = None)
-# ptvsd.wait_for_attach(30)
+import ptvsd
+ptvsd.enable_attach(secret = None)
+ptvsd.wait_for_attach(30)
 
 import sdl2
 import ctypes
@@ -13,7 +13,6 @@ import Shader
 import Drawable
 from MatrixUI import MatrixUI
 from ClipLauncher import ClipLauncher, Clip
-from Entity import Row
 
 from Util import Constants, ctype_from_addr
 from GrooveMatrix import Row, Cell, GrooveMatrix

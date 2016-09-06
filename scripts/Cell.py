@@ -1,7 +1,11 @@
 import StateGraph
-from Row import Row, MatrixEntity
+from MatrixEntity import MatrixEntity
 
 import contextlib
+import networkx as nx
+
+import Shape
+
 
 class Cell(MatrixEntity):
     # Cells are represented by a circle with this radius
@@ -29,9 +33,9 @@ class Cell(MatrixEntity):
         self.SetComponentID()
 
         # Create state graph nodes
-        pending = State.Pending(self)
-        playing = State.Playing(self)
-        stopped = State.Stopped(self)
+        pending = Cell.State.Pending(self)
+        playing = Cell.State.Playing(self)
+        stopped = Cell.State.Stopped(self)
 
         # Create di graph and add states
         G = nx.DiGraph()
@@ -97,6 +101,10 @@ class Cell(MatrixEntity):
         else:
             raise RuntimeError('wtf happened?')
 
+    def Update(self):
+        if self._mNextState is not self.GetActiveState():
+            self.mSG.AdvanceState()
+
     # Cell state declarations
     # This outer class is just so I can do things like Cell.State.Pending
     class State:
@@ -110,7 +118,7 @@ class Cell(MatrixEntity):
         # Pending state, gets set when we are queued up to play.
         class Pending(_state):
             def __init__(self, cell):
-                _state.__init__(self, cell, 'Pending')
+                super(type(self), self).__init__(cell, 'Pending')
 
             # State lifetime management
             @contextlib.contextmanager
@@ -124,7 +132,7 @@ class Cell(MatrixEntity):
         # that doesn't mean the actual voice isn't rendering a tail, though
         class Stopped(_state):
             def __init__(self, cell):
-                _state.__init__(self, cell, 'Stopped')
+                super(type(self), self).__init__(cell, 'Stopped')
 
             # State lifetime management
             @contextlib.contextmanager
@@ -147,7 +155,7 @@ class Cell(MatrixEntity):
         # is rendering the head of the clip
         class Playing(_state):
             def __init__(self, cell):
-                _state.__init__(self, cell, 'Playing')
+                super(type(self), self).__init__(cell, 'Playing')
 
             # State lifetime management
             @contextlib.contextmanager
@@ -163,3 +171,5 @@ class Cell(MatrixEntity):
                 self.mCell.mGM.StartCell(self.mCell)
                 yield
                 # Exit does nothing for now
+
+from Row import Row
