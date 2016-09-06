@@ -1,5 +1,6 @@
 import StateGraph
-from MatrixEntity import MatrixEntity
+from Row import Row, MatrixEntity
+
 import contextlib
 
 class Cell(MatrixEntity):
@@ -142,23 +143,23 @@ class Cell(MatrixEntity):
                 yield
                 # Exiting doesn't have to do anything for now
 
-            # The playing state is active when the cell
-            # is rendering the head of the clip
-            class Playing(_state):
-                def __init__(self, cell):
-                    _state.__init__(self, cell, 'Playing')
+        # The playing state is active when the cell
+        # is rendering the head of the clip
+        class Playing(_state):
+            def __init__(self, cell):
+                _state.__init__(self, cell, 'Playing')
 
-                # State lifetime management
-                @contextlib.contextmanager
-                def Activate(self, SG, prevState):
-                    # We should have been the row's pending cell
-                    if self.mCell.GetRow().GetPendingCell() is not self.mCell:
-                        raise RuntimeError('Weird state transition')
-                    # set color to on
-                    self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOn)
-                    # Once the pending state starts doing stuff, we'll
-                    # have to reset that state (i.e some oscillator angle)
-                    # Tell GM to start playing my stuff
-                    self.mCell.mGM.StartCell(self.mCell)
-                    yield
-                    # Exit does nothing for now
+            # State lifetime management
+            @contextlib.contextmanager
+            def Activate(self, SG, prevState):
+                # We should have been the row's pending cell
+                if self.mCell.GetRow().GetPendingCell() is not self.mCell:
+                    raise RuntimeError('Weird state transition')
+                # set color to on
+                self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOn)
+                # Once the pending state starts doing stuff, we'll
+                # have to reset that state (i.e some oscillator angle)
+                # Tell GM to start playing my stuff
+                self.mCell.mGM.StartCell(self.mCell)
+                yield
+                # Exit does nothing for now

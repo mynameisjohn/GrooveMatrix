@@ -1,5 +1,6 @@
 import StateGraph
-from MatrixEntity import MatrixEntity
+from Cell import MatrixEntity, Cell
+
 import contextlib
 
 class Row(MatrixEntity):
@@ -178,9 +179,10 @@ class Row(MatrixEntity):
     # This outer class is just so I can do things like Row.State.Pending
     class State:
         # Inner class is what all states inherit from
-        def __init__(self, row, name):
-            StateGraph.State.__init__(self, str(name))
-            self.mRow = row
+        class _state:
+            def __init__(self, row, name):
+                StateGraph.State.__init__(self, str(name))
+                self.mRow = row
 
         # Pending state means no cells are playing and one is pending
         class Pending(_state):
@@ -190,12 +192,10 @@ class Row(MatrixEntity):
             # State lifetime management
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # WE should have had a pending cell before this occurred
+                # We should have had a pending cell before this occurred
                 if self.mRow.GetPendingCell() is None:
                     raise RuntimeError('Weird state transition!')
-                # But this actually transitions the cell to pending...?
-                # self.mRow.GetPendingCell().SetState(CellState.Pending)
-                # We also have to start oscillating color
+                # Ideally we'd start oscillating our color or something
                 yield
 
         # The Row.Stopped state means all cells in row are stopped
@@ -207,13 +207,11 @@ class Row(MatrixEntity):
             # will be set to stopped and the color will change
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # There should have been an active or pending cell
-                if self.mRow.GetActiveCell() is None:
-                    if self.mRow.GetPendingCell() is None:
-                        raise RuntimeError('Weird state transition!')
-                else:
-                    # Tell our active cell (if any) to stop (sets mActiveCell)
-                    self.mRow.GetActiveCell().SetState(Cell.State.Stopped)
+                # Our pending cell should have been None
+                if self.mPendingCell is not None:
+                    raise RuntimeError('Weird state transition!')
+                # Advance, which sets active to stopped and assigns None
+                self.mRow._makePendingActive()
                 # Set the color of our row rect (Cell handles itself)
                 self.mRow.GetDrawable().SetColor(self.mRow.clrOff)
                 yield

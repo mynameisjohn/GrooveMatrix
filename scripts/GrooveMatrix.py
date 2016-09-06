@@ -7,9 +7,8 @@ import Camera
 import Shape
 
 # All of the UI elements are entities
-from Entity import Cell, Row
-import RowState
-import CellState
+from Cell import Cell
+from Row import Row
 
 # Input manager... handles input
 from InputManager import InputManager, MouseManager, KeyboardManager, Button
@@ -142,11 +141,15 @@ class GrooveMatrix:
             # Update all rows, determine if any should play
             for row in self.diRows.values():
                 row.Update()
-                if isinstance(row.GetActiveState(), RowState.Pending):
+                if isinstance(row.GetActiveState(), Row.State.Pending):
+                    # This is stupid... but in order to convince the row to start playing,
+                    # we set ourselves to be one sample away from the row trigger... dumb
+                    # I feel like it's only a matter of time before this screws me over
                     self.nCurSamplePos = row.GetTriggerRes() - self.nPreTrigger - 1
                     self.nCurSamplePosInc = 1
                     row.Update()
 
+            # Reset these two after advancing any pending rows
             self.nCurSamplePos = 0
             self.nCurSamplePosInc = 0
 
