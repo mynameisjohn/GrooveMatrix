@@ -25,7 +25,7 @@ class State(abc.ABC):
 
 # A graph of states, edges denote possible transitions
 class StateGraph:
-    def __init__(self, graph, fnAdvance, initialState, **kwargs):
+    def __init__(self, graph, fnAdvance, initialState, bPrime, **kwargs):
         if not hasattr(fnAdvance, '__call__'):
             raise ValueError('Error: Invalid advance function for SG!')
 
@@ -54,6 +54,8 @@ class StateGraph:
 
         # Declare coro, do not prime (?)
         self._stateCoro = stateCoro(self)
+        if bPrime:
+            self.AdvanceState()
 
         # Optional attrdict argument
         if kwargs is not None:

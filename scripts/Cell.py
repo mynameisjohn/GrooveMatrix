@@ -55,7 +55,7 @@ class Cell(MatrixEntity):
 
         # Create state graph with above variables,
         # set initial state to stopped, declare _mNextState = stopped
-        self.mSG = StateGraph.StateGraph(G, fnAdvance, stopped)
+        self.mSG = StateGraph.StateGraph(G, fnAdvance, stopped, True)
         self._mNextState = self.GetActiveState()
 
     # Setting state assigns _mNextState and advances
@@ -63,7 +63,8 @@ class Cell(MatrixEntity):
         # If they're different types, assign and advance
         if not isinstance(self.GetActiveState(), stateType):
             self._mNextState = stateType(self)
-            self.mSG.AdvanceState()
+            if self.mSG.AdvanceState() is not self._mNextState:
+                raise RuntimeError('Error! Something went wrong advancing Cell State!')
 
     # Return the state graph's active state
     def GetActiveState(self):
@@ -81,17 +82,17 @@ class Cell(MatrixEntity):
     # Clicking a cell will set the row's pending cell accordingly
     def OnLButtonUp(self):
         # If stopped, set us to pending
-        if isinstance(self.GetActiveState(), State.Stopped):
+        if isinstance(self.GetActiveState(), Cell.State.Stopped):
             self.mRow.SetPendingCell(self)
         # If pending, set row's pending to its current active state
-        elif isinstance(self.GetActiveState(), State.Pending):
+        elif isinstance(self.GetActiveState(), Cell.State.Pending):
             # We should have been the row's pending cell
             if self.mRow.GetPendingCell() is not self:
                 raise RuntimeError('Error: whose pending cell was', self.nID, '?')
             # Set to current active, if None no harm done
             self.mRow.SetPendingCell(self.mRow.GetActiveCell())
         # If playing, a click should stop us
-        elif isinstance(self.GetActiveState(), State.Playing):
+        elif isinstance(self.GetActiveState(), Cell.State.Playing):
             # But we should have been active
             if self.mRow.GetActiveCell() is not self:
                 raise RuntimeError('Error: whose active cell was', self.nID, '?')
@@ -138,12 +139,12 @@ class Cell(MatrixEntity):
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
                 # We should have been the active cell
-                if self.mCell.GetRow().GetActiveCell() is not self.mCell:
-                    raise RuntimeError('Weird state transition')
+                #if self.mCell.GetRow().GetActiveCell() is not self.mCell:
+                #    raise RuntimeError('Weird state transition')
                 # self.mCell.mRow.mActiveCell = None
                 # If the previous state was playing,
                 # we've got to stop any playing voices
-                if isinstance(prevState, Playing):
+                if isinstance(prevState, Cell.State.Playing):
                     gm = self.mCell.GetGrooveMatrix()
                     gm.StopCell(self.mCell)
                 # set the color to off

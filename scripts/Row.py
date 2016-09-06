@@ -112,7 +112,7 @@ class Row(MatrixEntity):
             return self.GetActiveState()
 
         # Create state graph member, init state to stopped
-        self.mSG =  StateGraph.StateGraph(G, fnAdvance, stopped)
+        self.mSG =  StateGraph.StateGraph(G, fnAdvance, stopped, True)
 
     # Set the pending cell
     # Note that this doesn't actually transition the cell
@@ -238,7 +238,7 @@ class Row(MatrixEntity):
                 if self.mRow.GetPendingCell() is None or self.mRow.GetActiveCell() is not None:
                     raise RuntimeError('Weird state transition!')
                 # Make pending cell active
-                self._makePendingActive()
+                self.mRow._makePendingActive()
                 # set color to on
                 self.mRow.GetDrawable().SetColor(self.mRow.clrOn)
                 yield
