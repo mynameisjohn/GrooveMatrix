@@ -128,9 +128,10 @@ class Row(MatrixEntity):
             if self.mPendingCell is not self.mActiveCell:
                 if self.mPendingCell is not None:
                     self.mPendingCell.SetState(Cell.State.Stopped)
-            # Assign mPendingCell, set it to pending
+            # Assign mPendingCell, set it to pending if not None
             self.mPendingCell = cell
-            self.mPendingCell.SetState(Cell.State.Pending)
+            if self.mPendingCell is not None:
+                self.mPendingCell.SetState(Cell.State.Pending)
 
     # Assign active as pending, if possible
     def _makePendingActive(self):
@@ -139,7 +140,7 @@ class Row(MatrixEntity):
             # If we had an active cell, set it to stopped
             if self.GetActiveCell() is not None:
                 # The active cell should have been playing
-                if not(isinstance(self.GetActiveCell().GetState(), Cell.State.Playing)):
+                if not(isinstance(self.GetActiveCell().GetActiveState(), Cell.State.Playing)):
                     raise RuntimeError('Error: Weird state transition!')
                 # Set it to stopped
                 self.GetActiveCell().SetState(Cell.State.Stopped)
