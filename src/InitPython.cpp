@@ -99,7 +99,7 @@ namespace pyl
 #define CREATE_AND_TEST_MOD(modName)\
 		pyl::ModuleDef * pModDef = CreateMod( modName );\
 		if ( pModDef == nullptr ){\
-			throw pyl::runtime_error("Error creating module \##modName");\
+			throw pyl::runtime_error("Error creating module ##modName");\
 			return false;\
 		}
 
