@@ -5,7 +5,7 @@ project(pylGrooveMatrix)
 set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
 
 # SDL2
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 find_package(SDL2)
 find_package(OpenGL)
 find_package(GLEW)
