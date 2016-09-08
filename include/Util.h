@@ -1,5 +1,7 @@
 #pragma once
 
+#include <algorithm>
+
 // Useful const pointer template
 template<typename T>
 using const_ptr = const T * const;
