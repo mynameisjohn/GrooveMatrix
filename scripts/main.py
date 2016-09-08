@@ -33,6 +33,7 @@ def Initialize(pMatrixUI, pClipLauncher):
     if cClipLauncher.Init(ctypes.addressof(audioSpec)) == False:
         return False
 
+    # Dumb function ot make on off colors
     def makeColor(ix):
         dif=.4
         clrOn = [.5 - dif if i==ix else 0 for i in range(3)]+[1]
@@ -123,8 +124,6 @@ def Initialize(pMatrixUI, pClipLauncher):
     g_GrooveMatrix = GrooveMatrix(pMatrixUI, pClipLauncher)
 
     # Add rows to groove Matrix
-    clrOff = [.2,.2,.2,1.]
-    clrOn = [.6,.6,.6,1.]
     for rowName, rowData in diRowClips.items():
         g_GrooveMatrix.AddRow(rowName, rowData)
 
@@ -135,7 +134,6 @@ def HandleEvent(pSdlEvent):
     sdlEvent = ctype_from_addr(pSdlEvent, sdl2.events.SDL_Event)
     g_GrooveMatrix.HandleEvent(sdlEvent)
 
-import time
 def Update():
     global g_GrooveMatrix
     g_GrooveMatrix.Update()
