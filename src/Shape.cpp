@@ -114,6 +114,8 @@ bool Shape::IsOverlapping( const_ptr<Shape> pOther ) const
 			}
 			break;
 		}
+        default:
+            break;
 	}
 
 	throw std::runtime_error( "Error: Invalid rigid body type!" );
@@ -132,6 +134,8 @@ bool Shape::IsPointInside( const glm::vec2 v2Point ) const
 			return TestPoint( const_ptr<AABB>( this ), v2Point );
 		case EType::Triangle:
 			return TestPoint( const_ptr<Triangle>( this ), v2Point );
+        default:
+            break;
 	}
 
 	throw std::runtime_error( "Error: Invalid rigid body type!" );
@@ -213,12 +217,12 @@ float Triangle::Top() const
 
 std::array<glm::vec2, 3> Triangle::Verts() const
 {
-	return{ v2A + v2Center, v2B + v2Center, v2C + v2Center };
+	return {{ v2A + v2Center, v2B + v2Center, v2C + v2Center }};
 }
 
 std::array<glm::vec2, 3> Triangle::Edges() const
 {
-	return{ v2B - v2A, v2C - v2B, v2A - v2C, };
+	return {{ v2B - v2A, v2C - v2B, v2A - v2C, }};
 }
 
 ////////////////////////////////////////////////////////////////////////////

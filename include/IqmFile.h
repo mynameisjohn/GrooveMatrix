@@ -176,12 +176,14 @@ public:
 		char * pDataBuf = nullptr;
 
 		// Useful lambdas
+/* Until I actually know what to do with this
 		auto isLittleEndian = [] ()
 		{	// Check if lil endian (not handled yet)
 			union { int i; uint8_t b[sizeof( int )]; } conv;
 			conv.i = 1;
 			return conv.b[0] != 0;
 		};
+*/
 		auto IQMASSERT = [&fp, &pDataBuf] ( bool cond, const char * msg )
 		{
 			if ( cond == false )

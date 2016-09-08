@@ -44,7 +44,7 @@ bool Drawable::Init( std::string strName, std::array<glm::vec3, 3> triVerts, glm
 		try
 		{
 			// We'll be creating an indexed array of VBOs
-			GLuint VAO( 0 ), nIdx( 0 );
+			GLuint VAO( 0 ), nIdx( 3 );
 
 			// Create vertex array object
 			glGenVertexArrays( 1, &VAO );
@@ -78,7 +78,7 @@ bool Drawable::Init( std::string strName, std::array<glm::vec3, 3> triVerts, glm
 			// Unbind VAO and cache data
 			glBindVertexArray( 0 );
 
-			s_VAOCache[strName] = { VAO, 3 };
+			s_VAOCache[strName] = {{ VAO, nIdx }};
 		}
 		catch ( std::runtime_error )
 		{
@@ -165,7 +165,7 @@ bool Drawable::Init( std::string strIqmSrcFile, glm::vec4 v4Color, quatvec qvTra
 
 			nIdx = idx.count();
 
-			s_VAOCache[strIqmSrcFile] = { VAO, nIdx };
+			s_VAOCache[strIqmSrcFile] = {{ VAO, nIdx }};
 		}
 		catch ( std::runtime_error )
 		{
