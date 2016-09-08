@@ -21,7 +21,7 @@ else(WIN32)
 	set(PYTHON_LIBRARY /usr/local/lib/libpython3.5m.a)
 	set(PYTHON_INCLUDE_DIR /usr/local/include/python3.5m)
 	set(SDL2_LIBS ${SDL2_LIBRARY})
-	set(GLM /usr/local/include/glm)
+	set(GLM /usr/local/include/)
 endif(WIN32)
 
 # Source files, include files, scripts

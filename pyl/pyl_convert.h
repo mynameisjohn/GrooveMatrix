@@ -204,7 +204,7 @@ namespace pyl
 		
 		// If that fails, an exception gets set
 		// print and clear it (I guess?), return false
-		print_error();
+        PyErr_Print();
 		PyErr_Clear();
 
 		return false;
