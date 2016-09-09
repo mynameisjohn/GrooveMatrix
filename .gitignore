@@ -4,4 +4,5 @@
 *.sln
 *.vcxproj
 scripts/sdl2
+scripts/trash
 scripts/__pycache__
