@@ -54,36 +54,6 @@ namespace pyl
 	bool convert(PyObject *obj, double &val);
 	bool convert(PyObject *obj, float &val);
 
-	// Add to Tuple functions
-	// These recurse to an arbitrary base b
-	// and convert objects in a PyTuple to objects in a 
-	// std::tuple. I added the b parameter because I wanted
-	// to set it to 1 and leave the first element alone. 
-	
-	// Base case, when n==b, just convert and return
-	template<size_t n, size_t b, class... Args>
-	typename std::enable_if<n == b, bool>::type
-		add_to_tuple(PyObject *obj, std::tuple<Args...> &tup) {
-		return convert(PyTuple_GetItem(obj, n-b), std::get<n>(tup));
-	}
-
-	// Recurse down to b; note that this can't compile 
-	// if n <= b because you'll overstep the bounds
-	// of the tuple, which is a compile time thing
-	template<size_t n, size_t b, class... Args>
-	typename std::enable_if<n != b, bool>::type
-		add_to_tuple(PyObject *obj, std::tuple<Args...> &tup) {
-		add_to_tuple<n - 1, b, Args...>(obj, tup);
-		return convert(PyTuple_GetItem(obj, n-b), std::get<n>(tup));
-	}
-
-	template<class... Args>
-	bool convert(PyObject *obj, std::tuple<Args...> &tup) {
-		if (!PyTuple_Check(obj) ||
-			PyTuple_Size(obj) != sizeof...(Args))
-			return false;
-		return add_to_tuple<sizeof...(Args)-1, 0, Args...>(obj, tup);
-	}
 	// Convert a PyObject to a std::map
 	template<class K, class V>
 	bool convert(PyObject *obj, std::map<K, V> &mp) {
@@ -204,10 +174,41 @@ namespace pyl
 		
 		// If that fails, an exception gets set
 		// print and clear it (I guess?), return false
-		print_error();
+        PyErr_Print();
 		PyErr_Clear();
 
 		return false;
+	}
+
+	// Add to Tuple functions
+	// These recurse to an arbitrary base b
+	// and convert objects in a PyTuple to objects in a 
+	// std::tuple. I added the b parameter because I wanted
+	// to set it to 1 and leave the first element alone. 
+	
+	// Base case, when n==b, just convert and return
+	template<size_t n, size_t b, class... Args>
+	typename std::enable_if<n == b, bool>::type
+		add_to_tuple(PyObject *obj, std::tuple<Args...> &tup) {
+		return convert(PyTuple_GetItem(obj, n-b), std::get<n>(tup));
+	}
+
+	// Recurse down to b; note that this can't compile 
+	// if n <= b because you'll overstep the bounds
+	// of the tuple, which is a compile time thing
+	template<size_t n, size_t b, class... Args>
+	typename std::enable_if<n != b, bool>::type
+		add_to_tuple(PyObject *obj, std::tuple<Args...> &tup) {
+		add_to_tuple<n - 1, b, Args...>(obj, tup);
+		return convert(PyTuple_GetItem(obj, n-b), std::get<n>(tup));
+	}
+
+	template<class... Args>
+	bool convert(PyObject *obj, std::tuple<Args...> &tup) {
+		if (!PyTuple_Check(obj) ||
+			PyTuple_Size(obj) != sizeof...(Args))
+			return false;
+		return add_to_tuple<sizeof...(Args)-1, 0, Args...>(obj, tup);
 	}
 
 	// -------------- PyObject allocators ----------------

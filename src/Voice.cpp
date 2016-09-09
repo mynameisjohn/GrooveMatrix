@@ -102,6 +102,7 @@ void Voice::SetStopping( const size_t uTriggerRes )
 
 			// Don't do anything if we're tailing or stopped
 		case EState::Tail:
+		case EState::Stopping:
 		case EState::Stopped:
 			return;
 	}

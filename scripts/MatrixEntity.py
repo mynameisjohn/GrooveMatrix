@@ -10,9 +10,9 @@ class MatrixEntity:
 	nEntsCreated = 0
 	# Increment the class ID counter and return the old
 	def NewID():
-		ret = MatrixEntity.nEntsCreated
+		nID = MatrixEntity.nEntsCreated
 		MatrixEntity.nEntsCreated += 1
-		return ret
+		return nID
 
 	# Constructor takes in groove matrix instance
 	def __init__(self, GM):

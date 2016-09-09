@@ -84,7 +84,7 @@ namespace pyl
 		return PyLong_FromLong( (long) e );
 	}
 
-	PyObject * alloc_pyobject( const vec2& v )
+	PyObject * alloc_pyobject( const glm::vec2& v )
 	{
 		PyObject * pRet = PyList_New( 2 );
 		if ( pRet )
@@ -99,7 +99,7 @@ namespace pyl
 #define CREATE_AND_TEST_MOD(modName)\
 		pyl::ModuleDef * pModDef = CreateMod( modName );\
 		if ( pModDef == nullptr ){\
-			throw pyl::runtime_error("Error creating module \##modName");\
+			throw pyl::runtime_error("Error creating module ##modName");\
 			return false;\
 		}
 

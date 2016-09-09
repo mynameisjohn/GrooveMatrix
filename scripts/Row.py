@@ -125,9 +125,8 @@ class Row(MatrixEntity):
         # If changing
         if self.mPendingCell is not cell:
             # If we have an actual pending cell, make sure it knows it's stopped
-            if self.mPendingCell is not self.mActiveCell:
-                if self.mPendingCell is not None:
-                    self.mPendingCell.SetState(Cell.State.Stopped)
+            if self.mPendingCell is not self.mActiveCell and self.mPendingCell is not None:
+                self.mPendingCell.SetState(Cell.State.Stopped)
             # Assign mPendingCell, set it to pending if not None
             self.mPendingCell = cell
             if self.mPendingCell is not None:
@@ -185,7 +184,7 @@ class Row(MatrixEntity):
     # This outer class is just so I can do things like Row.State.Pending
     class State:
         # Inner class is what all states inherit from
-        class _state:
+        class _state(StateGraph.State):
             def __init__(self, row, name):
                 StateGraph.State.__init__(self, str(name))
                 self.mRow = row
@@ -245,4 +244,7 @@ class Row(MatrixEntity):
                 yield
                 # No exit for now
 
+# These have to be imported at the end of
+# the file because of cyclical imports
+# (Row imports Cell, Cell imports Row)
 from Cell import Cell

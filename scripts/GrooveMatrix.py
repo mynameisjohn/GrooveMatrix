@@ -74,7 +74,7 @@ class GrooveMatrix:
             for ent in self.setEntities:
                 if self.cMatrixUI.GetIsOverlapping(ent.GetShape().c_ptr, cMouseCirc.c_ptr):
                     ent.OnLButtonUp()
-                    return
+                    break
             # Deactivate mouse circ
             cMouseCirc.SetIsActive(False)
 

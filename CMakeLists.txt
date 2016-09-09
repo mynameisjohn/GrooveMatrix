@@ -5,7 +5,7 @@ project(pylGrooveMatrix)
 set(CMAKE_CXX_FLAGS "-std=c++14 -Wall")
 
 # SDL2
-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/Modules")
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules")
 find_package(SDL2)
 find_package(OpenGL)
 find_package(GLEW)
@@ -21,7 +21,7 @@ else(WIN32)
 	set(PYTHON_LIBRARY /usr/local/lib/libpython3.5m.a)
 	set(PYTHON_INCLUDE_DIR /usr/local/include/python3.5m)
 	set(SDL2_LIBS ${SDL2_LIBRARY})
-	set(GLM /usr/local/include/glm)
+	set(GLM /usr/local/include/)
 endif(WIN32)
 
 # Source files, include files, scripts

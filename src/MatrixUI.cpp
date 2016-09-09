@@ -68,7 +68,7 @@ int MatrixUI::AddDrawableIQM( std::string strIqmFile, vec2 T, vec2 S, vec4 C, fl
 	try
 	{
 		// Assume rotation about z for now
-		fquat qRot( cos( theta / 2 ), sin( theta / 2 ) * vec3( 0, 0, 1 ) );
+		fquat qRot( cos( theta / 2 ), vec3( 0, 0, sin( theta / 2 ) ) );
 		D.Init( strIqmFile, C, quatvec( vec3( T, 0 ), qRot, quatvec::Type::TR ), S );
 	}
 	catch ( std::runtime_error )
@@ -87,7 +87,7 @@ int MatrixUI::AddDrawableTri( std::string strName, std::array<vec3, 3> triVerts,
 	try
 	{
 		// Assume rotation about z for now
-		fquat qRot( cos( theta / 2 ), sin( theta / 2 ) * vec3( 0, 0, 1 ) );
+		fquat qRot( cos( theta / 2 ), vec3( 0, 0, sin( theta / 2 ) ) );
 		D.Init( strName, triVerts, C, quatvec( vec3( T, 0 ), qRot, quatvec::Type::TR ), S );
 	}
 	catch ( std::runtime_error )
@@ -248,4 +248,5 @@ bool MatrixUI::GetIsOverlapping( Shape * pA, Shape * pB ) const
 {
 	if ( pA && pB )
 		return pA->IsOverlapping( pB );
+    return false;
 }
