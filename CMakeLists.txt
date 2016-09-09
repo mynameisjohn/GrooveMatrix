@@ -40,7 +40,7 @@ source_group("Include" FILES ${HEADERS})
 file(GLOB PYL_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/pyl/*.cpp)
 file(GLOB PYL_HEADERS ${CMAKE_CURRENT_SOURCE_DIR}/pyl/*.h)
 add_library(PyLiaison ${PYL_SOURCES} ${PYL_HEADERS})
-target_include_directories(PyLiaison PUBLIC ${PYL_HEADERS} ${PYTHON_INCLUDE_DIR} ${GLM})
+target_include_directories(PyLiaison PUBLIC ${PYL_HEADERS} ${PYTHON_INCLUDE_DIR} ${GLM} ${SDL2_INCLUDE_DIR})
 
 # Add the pylGrooveMatrix executable, which depends on source, include, and scripts
 add_executable(pylGrooveMatrix ${SOURCES} ${HEADERS} ${SCRIPTS} ${SHADERS})

@@ -2,8 +2,9 @@
 
 #include <Python.h>
 #include <glm/fwd.hpp>
+#include <SDL.h>
+
 #include "../include/ClipLauncher.h"
-#include "/usr/local/include/SDL2/SDL.h"
 #include "../include/Shape.h"
 
 namespace pyl
