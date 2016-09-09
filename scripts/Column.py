@@ -27,7 +27,7 @@ class Column(MatrixEntity):
         # column triangles will be above the cells, but right now
         # that placement code is kind of split up. Please centralize it
         nHalfTri = Column.nTriDim / 2
-        nColY = GM.GetCamera().GetScreenHeight() - Constants.nGap + nHalfTri
+        nColY = GM.GetCamera().GetScreenHeight() - (Constants.nGap + nHalfTri)
         triVerts = [[-nHalfTri, -nHalfTri], [-nHalfTri, nHalfTri], [0, nHalfTri]]
         self.nShIdx = GM.cMatrixUI.AddShape(Shape.Triangle, [nPosX, nColY], {
             'aX' : triVerts[0][0], 'aY' : triVerts[0][1],
