@@ -53,19 +53,19 @@ namespace pyl
 
 	bool convert( PyObject * o, glm::vec2& v )
 	{
-		return convert_buf( o, &v[0], 2 );
+		return convert_buf( o, &v[0], sizeof( v ) / sizeof( float ) );
 	}
 	bool convert( PyObject * o, glm::vec3& v )
 	{
-		return convert_buf( o, &v[0], 3 );
+		return convert_buf( o, &v[0], sizeof( v ) / sizeof( float ) );
 	}
 	bool convert( PyObject * o, glm::vec4& v )
 	{
-		return convert_buf( o, &v[0], 4 );
+		return convert_buf( o, &v[0], sizeof( v ) / sizeof( float ) );
 	}
 	bool convert( PyObject * o, glm::fquat& v )
 	{
-		return convert_buf( o, &v[0], 4 );
+		return convert_buf( o, &v[0], sizeof( v ) / sizeof( float ) );
 	}
 
 	// Type? Should be part of this...
@@ -86,13 +86,19 @@ namespace pyl
 
 	PyObject * alloc_pyobject( const glm::vec2& v )
 	{
-		PyObject * pRet = PyList_New( 2 );
-		if ( pRet )
-		{
-			PyList_SetItem( pRet, 0, alloc_pyobject( v[0] ) );
-			PyList_SetItem( pRet, 1, alloc_pyobject( v[1] ) );
-		}
-		return pRet;
+		return alloc_buf<float>( &v[0], sizeof( v ) / sizeof( float ) );
+	}
+	PyObject * alloc_pyobject( const glm::vec3& v )
+	{
+		return alloc_buf<float>( &v[0], sizeof( v ) / sizeof( float ) );
+	}
+	PyObject * alloc_pyobject( const glm::vec4& v )
+	{
+		return alloc_buf<float>( &v[0], sizeof( v ) / sizeof( float ) );
+	}
+	PyObject * alloc_pyobject( const glm::fquat& q )
+	{
+		return alloc_buf<float>( &q[0], sizeof( q ) / sizeof( float ) );
 	}
 }
 
@@ -240,6 +246,7 @@ namespace pyl
 	AddSubClassToMod( pModDef, Drawable, pEntMod, EntComponent );
 
 	AddMemFnToMod( pModDef, Drawable, SetPos2D, void, vec2 );
+	AddMemFnToMod( pModDef, Drawable, GetPos, vec3 );
 	AddMemFnToMod( pModDef, Drawable, SetTransform, void, quatvec );
 	AddMemFnToMod( pModDef, Drawable, SetColor, void, glm::vec4 );
 	AddMemFnToMod( pModDef, Drawable, GetIsActive, bool );

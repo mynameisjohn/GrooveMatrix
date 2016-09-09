@@ -219,6 +219,22 @@ namespace pyl
 		return PyLong_FromLong(num);
 	}
 
+	template<typename T>
+	PyObject * alloc_buf( const T * const pBuf, int N )
+	{
+		N = std::max( N, 0 );
+		PyObject * pRet = PyList_New( N );
+		if ( pBuf && pRet )
+		{
+			for ( Py_ssize_t i = 0; i < N; i++ )
+			{
+				PyList_SetItem( pRet, i, alloc_pyobject( pBuf[i] ) );
+			}
+		}
+
+		return pRet;
+	}
+
 	// Generic python list allocation
 	template<class T> static PyObject *alloc_list(const T &container) {
 		PyObject *lst(PyList_New(container.size()));

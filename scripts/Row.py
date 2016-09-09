@@ -10,7 +10,7 @@ from collections import namedtuple
 
 class Row(MatrixEntity):
     # Rows are represented by a rect
-    nHeaderW = 200	# width of row header
+    nHeaderW = 100	# width of row header
     nHeaderH = 50	# height of row header
 
     # Useful when constructing

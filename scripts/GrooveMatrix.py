@@ -9,6 +9,7 @@ import Shape
 # All of the UI elements are entities
 from Cell import Cell
 from Row import Row
+from Column import Column
 
 # Input manager... handles input
 from InputManager import InputManager, MouseManager, KeyboardManager, Button
@@ -30,10 +31,12 @@ class GrooveMatrix:
         nMouseRad = 3
         self.nHitShapeIdx = self.cMatrixUI.AddShape(Shape.Circle, [0,0], {'r' : nMouseRad})
 
-        # No rows yet
-        self.diRows = {}
-        self.setEntities = set()
+        # No rows or columns yet
+        self.diRows = {}            # Rows are keyed by name
+        self.liCols = []            # Columsn are in a list - for now
+        self.setEntities = set()    # All entities are here
 
+        # Reset play state
         self.Reset()
 
         # construct the keyboard button handler functions
@@ -199,55 +202,6 @@ class GrooveMatrix:
         if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
             self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
 
-        # Compute the new sample pos, zero inc, don't update yet
-        # nNewSamplePos = self.nCurSamplePos + self.nCurSamplePosInc
-        # self.nCurSamplePosInc = 0
-
-        # # ultimately the result of this is a set
-        # # of clips to turn on and a set to turn off
-        # setOn = set()
-        # setOff = set()
-        # for row in self.diRows.values():
-        #     # Store the previous active cell
-        #     curCell = row.mActiveCell
-        #     if curCell is not None:
-        #         # If we'll cross the trigger position
-        #         nTrigger = curCell.nTriggerRes - self.nPreTrigger
-        #         if self.nCurSamplePos < nTrigger and nNewSamplePos >= nTrigger:
-        #             # If the active cell is changing
-        #             if row.ExchangeActiveCell():
-        #                 # If the original wasn't None, turn it off
-        #                 if curCell is not None:
-        #                     print('turning', curCell, 'off')
-        #                     setOff.add(curCell)
-        #                 # Turn on the new cells
-        #                 if row.mActiveCell is not None:
-        #                     setOn.add(row.mActiveCell)
-        #     # Going from nothing to something
-        #     elif row.ExchangeActiveCell():
-        #         # This is broken because it sets
-        #         # the cell to active before the
-        #         # trigger res is hit.
-        #         # Turn on the new cells
-        #         print('turning on', row.mActiveCell.cClip.GetName())
-        #         setOn.add(row.mActiveCell)
-        #
-        # # Update sample pos, maybe inc totalLoopCount and reset
-        # self.nCurSamplePos = nNewSamplePos
-        # if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
-        #     self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
-        #
-        # # Construct the commands
-        # liCmds = []
-        # for c in setOn:
-        #     liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
-        # for c in setOff:
-        #     liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, c.mRow.nID, c.fVolume, c.nTriggerRes))
-        #
-        # # Post to clip launcher
-        # if len(liCmds):
-        #     self.cClipLauncher.HandleCommands(liCmds)
-
     def GetCamera(self):
         return Camera.Camera(self.cMatrixUI.GetCameraPtr())
 
@@ -267,3 +221,17 @@ class GrooveMatrix:
         self.diRows[strName] = r
         self.setEntities.add(r)
         self.setEntities.update(c for c in r.liCells)
+
+        # Get the previous col count and the new one
+        nPrevCols = len(self.liCols)
+        nNewCols = max(nPrevCols, len(r.liCells))
+
+        # zip by default does shortest
+        for col, cell in zip(self.liCols, r.liCells):
+            col.AddCell(cell)
+
+        # If there are columns left to add, add them now
+        for colIdx in range(nPrevCols, nNewCols):
+            if len(r.liCells):
+                nPosX = r.liCells[0].GetDrawable().GetPos()[0]
+                self.liCols.append(Column(self, nPosX, {r.liCells[colIdx]}))

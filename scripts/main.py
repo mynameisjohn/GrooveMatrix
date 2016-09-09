@@ -1,8 +1,8 @@
 # Used for debugging
 # secret@localhost:5678
-# import ptvsd
-# ptvsd.enable_attach(secret = None)
-# ptvsd.wait_for_attach(30)
+import ptvsd
+ptvsd.enable_attach(secret = None)
+#ptvsd.wait_for_attach(30)
 
 import sdl2
 import ctypes
@@ -15,7 +15,7 @@ from MatrixUI import MatrixUI
 from ClipLauncher import ClipLauncher, Clip
 
 from Util import Constants, ctype_from_addr
-from GrooveMatrix import Row, Cell, GrooveMatrix
+from GrooveMatrix import Row, Cell, GrooveMatrix, Column
 
 import InputManager
 
@@ -54,8 +54,7 @@ def Initialize(pMatrixUI, pClipLauncher):
                                                 clrOn =  makeColor(1)[1]),
                     'Sustain' :     Row.RowData(liClipData = [formatClipTup('sus1')],
                                                 clrOff =  makeColor(2)[0],
-                                                clrOn =  makeColor(2)[1])
-                }
+                                                clrOn =  makeColor(2)[1])}
 
     #diRowClips = {
     #    'Drums' :   [formatClipTup('drum_gr_'+str(i) for i in range(3)],
@@ -89,7 +88,7 @@ def Initialize(pMatrixUI, pClipLauncher):
     # The window width and height are a function of the cells we'll have
     nCols = max(len(rd.liClipData) for rd in diRowClips.values())
     nWindowWidth = 2 * Constants.nGap + Row.nHeaderW + nCols * (Constants.nGap + 2 * Cell.nRadius)
-    nWindowHeight = Constants.nGap + len(diRowClips.keys()) * (Row.nHeaderH + Constants.nGap)
+    nWindowHeight = 2 * Constants.nGap + Column.nTriDim + len(diRowClips.keys()) * (Row.nHeaderH + Constants.nGap)
 
     # init the UI display
     if cMatrixUI.InitDisplay('SimpleRB1', [.1,.1,.1,1.],{
@@ -103,7 +102,7 @@ def Initialize(pMatrixUI, pClipLauncher):
         'doubleBuf' : 1,
         'vsync' : 1
         }) == False:
-        raise RuntimeError('Error initializing Scene Display')
+        raise RuntimeError('Error initializing UI')
 
     # Set up shader
     cShader = Shader.Shader(cMatrixUI.GetShaderPtr())
