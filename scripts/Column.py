@@ -68,66 +68,21 @@ class Column(MatrixEntity):
     def AddCell(self, cell):
         self.setCells.add(cell)
 
-#     # Set the pending cell
-#     # Note that this doesn't actually transition the cell
-#     # into a pending state unless we were pending
-#     # If we were not, then the transition to pending takes care of it
-#     def SetPendingCell(self, cell):
-#         # If not None, it better be one of ours
-#         if cell is not None and cell not in self.liCells:
-#             raise RuntimeError('Pending Cell not in row!')
-#         # If changing
-#         if self.mPendingCell is not cell:
-#             # If we have an actual pending cell, make sure it knows it's stopped
-#             if self.mPendingCell is not self.mActiveCell and self.mPendingCell is not None:
-#                 self.mPendingCell.SetState(Cell.State.Stopped)
-#             # Assign mPendingCell, set it to pending if not None
-#             self.mPendingCell = cell
-#             if self.mPendingCell is not None:
-#                 self.mPendingCell.SetState(Cell.State.Pending)
-#
-#     # Assign active as pending, if possible
-#     def _makePendingActive(self):
-#         # If the pending is not the active
-#         if self.mPendingCell is not self.mActiveCell:
-#             # If we had an active cell, set it to stopped
-#             if self.GetActiveCell() is not None:
-#                 # The active cell should have been playing
-#                 if not(isinstance(self.GetActiveCell().GetActiveState(), Cell.State.Playing)):
-#                     raise RuntimeError('Error: Weird state transition!')
-#                 # Set it to stopped
-#                 self.GetActiveCell().SetState(Cell.State.Stopped)
-#             # If we had a pending cell,set it to playing
-#             if self.GetPendingCell() is not None:
-#                 self.GetPendingCell().SetState(Cell.State.Playing)
-#             # Assign active to pending, leave pending alone
-#             self.mActiveCell = self.mPendingCell
-#
-#     # Get graph's active state
-#     def GetActiveState(self):
-#         return self.mSG.GetActiveState()
-#
-#     def GetTriggerRes(self):
-#         # Return our active cell's if possible
-#         if self.mActiveCell is not None:
-#             return self.mActiveCell.GetTriggerRes()
-#         # Otherwise take it to be the shortest of all (?)
-#         return min(c.nTriggerRes for c in self.liCells)
-#
-#     # Mouse handler override
-#     def OnLButtonUp(self):
-#         # Clicking a row should stop any playing cells
-#         if isinstance(self.GetActiveState(), Row.State.Playing):
-#             self.SetPendingCell(None)
-#
-#     # Get the pending or active cell
-#     def GetPendingCell(self):
-#         return self.mPendingCell
-#
-#     def GetActiveCell(self):
-#         return self.mActiveCell
-#
-#     # Update function advances state graph
+    # Update function advances state graph
+    def Update(self):
+        self.mSG.AdvanceState()
+
+    def OnLButtonUp(self):
+        if len(self.setCells):
+            for c in self.setCells:
+                c.GetRow().SetPendingCell(c)
+            self.SetState(Column.State.Pending)
+
+    def GetTriggerRes(self):
+        if len(self.setCells):
+            return max(c.GetTriggerRes() for c in self.setCells)
+        raise RuntimeError('Error: Empty column!')
+
 #     # and gives each cell a chance to Update
 #     def Update(self):
 #         self.mSG.AdvanceState()
