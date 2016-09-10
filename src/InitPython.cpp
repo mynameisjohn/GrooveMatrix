@@ -84,21 +84,27 @@ namespace pyl
 		return PyLong_FromLong( (long) e );
 	}
 
+	template <typename glmType>
+	PyObject * alloc_glm_type( const glmType& v )
+	{
+		return alloc_buf<float>(&v[0], sizeof( v ) / sizeof( float ));
+	}
+
 	PyObject * alloc_pyobject( const glm::vec2& v )
 	{
-		return alloc_buf<float>( &v[0], sizeof( v ) / sizeof( float ) );
+		return alloc_glm_type( v );
 	}
 	PyObject * alloc_pyobject( const glm::vec3& v )
 	{
-		return alloc_buf<float>( &v[0], sizeof( v ) / sizeof( float ) );
+		return alloc_glm_type( v );
 	}
 	PyObject * alloc_pyobject( const glm::vec4& v )
 	{
-		return alloc_buf<float>( &v[0], sizeof( v ) / sizeof( float ) );
+		return alloc_glm_type( v );
 	}
 	PyObject * alloc_pyobject( const glm::fquat& q )
 	{
-		return alloc_buf<float>( &q[0], sizeof( q ) / sizeof( float ) );
+		return alloc_glm_type( q );
 	}
 }
 
