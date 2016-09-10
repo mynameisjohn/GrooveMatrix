@@ -231,5 +231,6 @@ class GrooveMatrix:
         # If there are columns left to add, add them now
         for colIdx in range(nPrevCols, nNewCols):
             if len(r.liCells):
-                nPosX = r.liCells[0].GetDrawable().GetPos()[0]
+                nPosX0 = r.liCells[0].GetDrawable().GetPos()[0]
+                nPosX = nPosX0 + len(self.liCols) * (Constants.nGap + Column.nTriDim)
                 self.liCols.append(Column(self, nPosX, {r.liCells[colIdx]}))
