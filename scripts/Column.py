@@ -62,6 +62,46 @@ class Column(MatrixEntity):
         # If a GM instance is making us with cells, they get stored here
         self.setCells = {c for c in setCells if isinstance(c, Cell)}
 
+        # construct states 
+        pending = Column.State.Pending(self)
+        stopped = Column.State.Stopped(self)
+        self.bWasClicked = False
+
+        # state advance function
+        def fnAdvance(SG):
+            # Columns are set to pending, and the trigger res should be
+            # that of the longest pending cell in the column
+            nonlocal self, pending, playing, stopped
+            # Pending
+            if self.GetActiveState() == pending:
+                # For pending columns, determine if any of the cells
+                # in our set are still pending and advance accordingly
+                nTrigger = 0
+                for c in self.setCells:
+                    if isinstance(c.GetActiveState(), Cell.State.Pending):
+                        nTrigger = max(nTrigger, c.GetTriggerRes())
+                if nTrigger > 0:
+                    # Make sure columns update before cells/rows....
+                    # If we're pending and still have pending cells,
+                    # See if we'll hit the longest pending resolution
+                    nCurPos = self.mGM.GetCurrentSamplePos()
+                    nNewPos = nCurPos + self.mGM.GetCurrentSamplePosInc()
+                    if nCurPos < nTrigger and nNewPos >= nTrigger:
+                        return stopped
+                else:
+                    # This can happen if we set a column to pending and
+                    # then manually clear all pending cells. Return stopped
+                    return stopped
+            # Stopped can only be set to pending if we're clicked
+            elif self.GetActiveState() == stopped:
+                # Reset that bool and return pending
+                if self.bWasClicked:
+                    self.bWasClicked = False
+                    return pending
+
+        # Construct SG
+        self.mSG =  StateGraph.StateGraph(G, fnAdvance, stopped, True)
+
     # A GM instance will own a list of rows and columns. Every time
     # a row is added to the GM, it will look at its columns and add
     # any cells needed - if a column is missing, it will be constructed
@@ -78,10 +118,49 @@ class Column(MatrixEntity):
                 c.GetRow().SetPendingCell(c)
             self.SetState(Column.State.Pending)
 
+    # This returns the longest trigger res for our cells
+    # I may add a flag to return only the longest pending res
     def GetTriggerRes(self):
         if len(self.setCells):
             return max(c.GetTriggerRes() for c in self.setCells)
         raise RuntimeError('Error: Empty column!')
+
+    class State:
+        class _state(StateGraph.State):
+            def __init__(self, col, name):
+                StateGraph.State.__init__(self, str(name))
+                self.mCol = col
+
+        class Pending(_state):
+            def __init__(self, col, name):
+                super(type(self), self).__init__(col, 'Pending')
+
+            # When a column is set to pending, set all our cells to pending
+            def Activate(self, SG, prevState):
+                for c in self.mCol.setCells:
+                    c.SetState(Cell.State.Pending)
+                yield
+
+        class Stopped(_state):
+            def __init__(self, col, name):
+                super(type(self), self).__init__(col, 'Stopped')
+
+            # The stopped state should just stop flashing
+            # the state if the prev state was pending
+            def Activate(self, SG, prevState):
+                if isinstance(prevState, Column.State.Pending):
+                    # You should clear any flashing state here
+                    pass
+                yield
+
+'''
+        class Playing(_state):
+            def __init__(self, col, name):
+                super(type(self), self).__init__(col, 'Playing')
+
+            def Activate(self, SG, prevState):
+                yield
+'''
 
 #     # and gives each cell a chance to Update
 #     def Update(self):
