@@ -33,6 +33,7 @@ class StateGraph:
         self.G = graph
         self.activeState = initialState
         self._fnAdvance = fnAdvance
+        self._mNextStateOverride = None
 
         # A coroutine that manages active state contexts
         def stateCoro(self):
@@ -47,7 +48,11 @@ class StateGraph:
                 with self.activeState.Activate(self, prevState):
                     while nextState is self.activeState:
                         yield self.activeState
-                        nextState = self._fnAdvance(self)
+                        if self._mNextStateOverride is not None:
+                            nextState = self._mNextStateOverride
+                            self._mNextStateOverride = None
+                        else:
+                            nextState = self._fnAdvance(self)
                     if nextState not in self.G.neighbors(self.activeState):
                         raise RuntimeError('Error: Invalid state transition!')
                 prevState = self.activeState
@@ -65,6 +70,12 @@ class StateGraph:
     # Returns the current active state
     def GetActiveState(self):
         return self.activeState
+
+    def SetState(self, nextState):
+        if nextState not in self.G.neighbors(self.activeState):
+            raise RuntimeError('Error: Invalid state transition!')
+        self._mNextStateOverride = nextState
+        next(self._stateCoro)
 
     # Returns next state without advancing
     def GetNextState(self):
