@@ -6,7 +6,6 @@ import networkx as nx
 
 import Shape
 
-
 class Cell(MatrixEntity):
     # Cells are represented by a circle with this radius
     nRadius = 25
@@ -35,6 +34,7 @@ class Cell(MatrixEntity):
         # Create state graph nodes
         pending = Cell.State.Pending(self)
         playing = Cell.State.Playing(self)
+        stopping = Cell.State.Stopping(self)
         stopped = Cell.State.Stopped(self)
 
         # Create di graph and add states
@@ -42,135 +42,133 @@ class Cell(MatrixEntity):
         G.add_edge(pending, playing)
         G.add_edge(pending, stopped)
         G.add_edge(stopped, pending)
-        G.add_edge(playing, stopped)
-
-        # This is the function that advances the state graph
-        # and determines if a state transition is in order
-        # For cells it's very dumb, and probably unnecessary
-        def fnAdvance(SG):
-            # Cells will have a member _mNextState - whenever it is set,
-            # the graph will advance and the new state will become active
-            nonlocal self
-            return self._mNextState
+        G.add_edge(playing, stopping)
+        G.add_edge(stopping, stopped)
 
         # Create state graph with above variables,
         # set initial state to stopped, declare _mNextState = stopped
-        self.mSG = StateGraph.StateGraph(G, fnAdvance, stopped, True)
-        self._mNextState = self.GetActiveState()
+        self.mSG = StateGraph.StateGraph(G, MatrixEntity.fnAdvance, stopped, True)
 
-    # Setting state assigns _mNextState and advances
-    def SetState(self, stateType):
-        # If they're different types, assign and advance
-        if not isinstance(self.GetActiveState(), stateType):
-            self._mNextState = stateType(self)
-            if self.mSG.AdvanceState() is not self._mNextState:
-                raise RuntimeError('Error! Something went wrong advancing Cell State!')
+    # Until I can find a way to get both row and col in constructor
+    # Column constructor should call this
+    def SetCol(self, col):
+        if isinstance(col, Column.Column):
+            self.mCol = col
 
-    # Return the state graph's active state
-    def GetActiveState(self):
-        return self.mSG.GetActiveState()
-
-    # Get our row
     def GetRow(self):
         return self.mRow
+
+    def GetCol(self):
+        return self.mCol
 
     # Get our trigger resolution
     def GetTriggerRes(self):
         return self.nTriggerRes
 
-    # Mouse handler override
-    # Clicking a cell will set the row's pending cell accordingly
-    def OnLButtonUp(self):
-        # If stopped, set us to pending
-        if isinstance(self.GetActiveState(), Cell.State.Stopped):
-            self.mRow.SetPendingCell(self)
-        # If pending, set row's pending to its current active state
-        elif isinstance(self.GetActiveState(), Cell.State.Pending):
-            # We should have been the row's pending cell
-            if self.mRow.GetPendingCell() is not self:
-                raise RuntimeError('Error: whose pending cell was', self.nID, '?')
-            # Set to current active, if None no harm done
-            self.mRow.SetPendingCell(self.mRow.GetActiveCell())
-        # If playing, a click should stop us
-        elif isinstance(self.GetActiveState(), Cell.State.Playing):
-            # But we should have been active
-            if self.mRow.GetActiveCell() is not self:
-                raise RuntimeError('Error: whose active cell was', self.nID, '?')
-            # A pending cell of None means stop at the next trigger
-            self.mRow.SetPendingCell(None)
-        # Uh oh
-        else:
-            raise RuntimeError('wtf happened?')
+    def WillTriggerBeHit(self):
+        nCurPos = self.mGM.GetCurrentSamplePos()
+        nNewPos = nCurPos + self.mGM.GetCurrentSamplePosInc()
+        nTrigger = self.GetTriggerRes() - self.mGM.GetPreTrigger()
+        return nCurPos < nTrigger and nNewPos >= nTrigger
 
-    def Update(self):
-        if self._mNextState is not self.GetActiveState():
-            self.mSG.AdvanceState()
-
-    # Cell state declarations
-    # This outer class is just so I can do things like Cell.State.Pending
     class State:
-        # Inner class is what all states inherit from
-        class _state(StateGraph.State):
-            # Every state instance owns a ref to its cell
+        class _state(MatrixEntity._state):
             def __init__(self, cell, name):
-                StateGraph.State.__init__(self, str(name))
+                MatrixEntity._state.__init__(self, name)
                 self.mCell = cell
 
-        # Pending state, gets set when we are queued up to play.
         class Pending(_state):
             def __init__(self, cell):
                 super(type(self), self).__init__(cell, 'Pending')
 
-            # State lifetime management
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # Entering the pending state should start some sort
-                # of drawable cycle (i.e flashing)
                 yield
-                # Exiting doesn't have to do anything for now
 
-        # The stopped state is active when we aren't playing or pending
-        # that doesn't mean the actual voice isn't rendering a tail, though
-        class Stopped(_state):
-            def __init__(self, cell):
-                super(type(self), self).__init__(cell, 'Stopped')
+            # Revert to stopped if clicked
+            def OnLButtonUp(self):
+                return Cell.State.Stopped(self.mCell)
 
-            # State lifetime management
-            @contextlib.contextmanager
-            def Activate(self, SG, prevState):
-                # We should have been the active cell
-                #if self.mCell.GetRow().GetActiveCell() is not self.mCell:
-                #    raise RuntimeError('Weird state transition')
-                # self.mCell.mRow.mActiveCell = None
-                # If the previous state was playing,
-                # we've got to stop any playing voices
-                if isinstance(prevState, Cell.State.Playing):
-                    gm = self.mCell.GetGrooveMatrix()
-                    gm.StopCell(self.mCell)
-                # set the color to off
-                self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOff)
-                yield
-                # Exiting doesn't have to do anything for now
+            # Pending to Playing if we'll hit our trigger res
+            def Advance(self):
+                if self.mCell.WillTriggerBeHit():
+                    return Cell.State.Playing(self.mCell)
 
-        # The playing state is active when the cell
-        # is rendering the head of the clip
         class Playing(_state):
             def __init__(self, cell):
                 super(type(self), self).__init__(cell, 'Playing')
 
-            # State lifetime management
             @contextlib.contextmanager
+            # When a cell starts playing, it tells the GM what to play
             def Activate(self, SG, prevState):
                 # We should have been the row's pending cell
                 if self.mCell.GetRow().GetPendingCell() is not self.mCell:
                     raise RuntimeError('Weird state transition')
                 # set color to on
                 self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOn)
-                # Once the pending state starts doing stuff, we'll
-                # have to reset that state (i.e some oscillator angle)
                 # Tell GM to start playing my stuff
                 self.mCell.mGM.StartCell(self.mCell)
                 yield
-                # Exit does nothing for now
+
+            # Set to stopping if clicked
+            def OnLButtonUp(self):
+                return Cell.State.Stopping(self.mCell)
+
+            # Pending to Playing if we'll hit our trigger res
+            def Advance(self):
+                # If we're playing and our row is switching to something else, we are stopping
+                if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Switching):
+                    if self.mCell.GetRow().GetPendingCell() != self.mCell:
+                        return Cell.State.Stopping(self.mCell)
+                # If our column is stopping, we're stopping
+                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Stopping):
+                    return Cell.State.Stopping(self.mCell)
+
+        class Stopping(_state):
+            def __init__(self, cell):
+                super(type(self), self).__init__(cell, 'Stopping')
+
+            @contextlib.contextmanager
+            def Activate(self, SG, prevState):
+                yield
+
+            # Revert to playing if stopping clicked
+            def OnLButtonUp(self):
+                return Cell.State.Playing(self.mCell)
+
+            # Pending to Playing if we'll hit our trigger res
+            def Advance(self):
+                # If we're stopping and either our row or column is playing, we're playing
+                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Playing):
+                    return Cell.State.Playing(self.mCell)
+                if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Playing):
+                    return Cell.State.Playing(self.mCell)
+                # Otherwise, if our trigger will be hit, we're stopped
+                if self.mCell.WillTriggerBeHit():
+                    return Cell.State.Stopped(self.mCell)
+
+        class Stopped(_state):
+            def __init__(self, cell):
+                super(type(self), self).__init__(cell, 'Stopped')
+
+            @contextlib.contextmanager
+            def Activate(self, SG, prevState):
+                # If the previous state was playing,
+                # we've got to stop any playing voices
+                if isinstance(prevState, Cell.State.Playing):
+                    self.mCell.GetGrooveMatrix().StopCell(self.mCell)
+                # set the color to off
+                self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOff)
+                yield
+
+            # Clicking a stopped cell will make it pending
+            def OnLButtonUp(self):
+                return Cell.State.Pending(self.mCell)
+
+            # We'll advance to Pending if our column is pending
+            def Advance(self):
+                if isinstance(self.mCell.GetCol().GetState(), Column.State.Pending):
+                    return Cell.State.Pending(self.mCell)
 
 from Row import Row
+from Column import Column

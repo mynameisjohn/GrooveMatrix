@@ -1,5 +1,6 @@
 import abc
 
+import StateGraph
 import Drawable
 import Shape
 
@@ -25,6 +26,22 @@ class MatrixEntity:
 		self.nShIdx = -1
 		self.nDrIdx = -1
 
+        # Stategraph will have to be constructed by children
+        self.mSG = None
+
+    def GetActiveState(self):
+        return self.mSG.GetActiveState()
+
+    def GetNextState(self):
+        return self.mSG.GetNextState()
+
+    def AdvanceState(self):
+        return self.mSG.AdvanceState()
+
+    def SetState(self, nextState):
+        if nextState != self.GetActiveState():
+            self.mSG.SetState(stateType(self))
+
     # Get the collision shape from the matrix UI object
 	def GetShape(self):
 		if self.nShIdx < 0:
@@ -46,17 +63,28 @@ class MatrixEntity:
 	def GetGrooveMatrix(self):
 		return self.mGM
 
-	# All should be clickable
-	@abc.abstractmethod
-	def OnLButtonUp(self):
-		pass
-
-	@abc.abstractmethod
-	def Update(self):
-		pass
-
 	# These are probably worthwhile
 	def __hash__(self):
 		return hash(self.nID)
 	def __eq__(self, other):
 		return self.nID == other.nID
+
+    def OnLButtonUp(self):
+        self.SetState(self.GetActiveState().OnLButtonUp())
+
+    def fnAdvance(SG):
+        nonlocal self
+        nextState = self.GetActiveState().Advance()
+        if nextState is not None:
+            return nextState
+        return self.GetActiveState()
+
+	class _state(StateGraph.State):
+		def __init__(self, name):
+			StateGraph.State.__init__(self, str(name))
+		@abc.abstractmethod
+		def OnLButtonUp(self):
+			pass
+		@abc.abstractmethod
+		def Advance(self):
+			pass
