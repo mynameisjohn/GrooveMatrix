@@ -83,10 +83,10 @@ class Column(MatrixEntity):
 
             def Advance(self):
                 # Pending to Playing if any cells are playing
-                if any(isinstance(c.GetActiveState(), Cell.State.Playing for c in self.mCol.setCells)):
+                if any(isinstance(c.GetActiveState(), Cell.State.Playing) for c in self.mCol.setCells):
                     return Column.State.Playing(self)
                 # Stopped if all are stopped
-                if all(isinstance(c.GetActiveState(), Cell.State.Stopped for c in self.mCol.setCells)):
+                if all(isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
                     return Column.State.Stopped(self)
 
         class Playing(_state):
@@ -103,11 +103,11 @@ class Column(MatrixEntity):
 
             def Advance(self):
                 # Stopping if all are stopping
-                if all(isinstance(c.GetActiveState(), Cell.State.Stopping for c in self.mCol.setCells)):
+                if all(isinstance(c.GetActiveState(), Cell.State.Stopping) for c in self.mCol.setCells):
                     return Column.State.Stopping
                 # Pending to Playing if any cells are playing
-                if any(isinstance(c.GetActiveState(), Cell.State.Playing for c in self.mCol.setCells)):
+                if any(isinstance(c.GetActiveState(), Cell.State.Playing) for c in self.mCol.setCells):
                     return Column.State.Playing(self)
                 # Stopped if all are stopped
-                if all(isinstance(c.GetActiveState(), Cell.State.Stopped for c in self.mCol.setCells)):
+                if all(isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
                     return Column.State.Stopped(self)
