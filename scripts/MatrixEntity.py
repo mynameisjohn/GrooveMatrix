@@ -25,25 +25,25 @@ import Shape
 # they will return Cell.State.Pending.
 
 class MatrixEntity:
-	# class variable that keeps a counter
-	# of entities created, which is useful
-	# for generating unique IDs
-	nEntsCreated = 0
+    # class variable that keeps a counter
+    # of entities created, which is useful
+    # for generating unique IDs
+    nEntsCreated = 0
 
-	# Increment the class ID counter and return the old
-	def NewID():
-		nID = MatrixEntity.nEntsCreated
-		MatrixEntity.nEntsCreated += 1
-		return nID
+    # Increment the class ID counter and return the old
+    def NewID():
+        nID = MatrixEntity.nEntsCreated
+        MatrixEntity.nEntsCreated += 1
+        return nID
 
-	# Constructor takes in groove matrix instance
+    # Constructor takes in groove matrix instance
     # In the future I'd like this function to
     # construct the state graph, and it should be
     # called after the child constructor
-	def __init__(self, GM, dG, s0):
-	    # Set ID, store GM
-		self.nID = MatrixEntity.NewID()
-		self.mGM = GM
+    def __init__(self, GM, dG, s0):
+        # Set ID, store GM
+        self.nID = MatrixEntity.NewID()
+        self.mGM = GM
 
         # Init these to -1, eventually they'll be subclass specific
         self.nShIdx = -1
@@ -77,31 +77,31 @@ class MatrixEntity:
             self.mSG.SetState(stateType(self))
 
     # Get the collision shape from the matrix UI object
-	def GetShape(self):
-		if self.nShIdx < 0:
-			raise RuntimeError('Error: Invalid shape index for Entity', self.nID)
-		return Shape.Shape(self.mGM.cMatrixUI.GetShape(self.nShIdx))
+    def GetShape(self):
+        if self.nShIdx < 0:
+            raise RuntimeError('Error: Invalid shape index for Entity', self.nID)
+        return Shape.Shape(self.mGM.cMatrixUI.GetShape(self.nShIdx))
 
     # Get the drawable object from the matrix UI
-	def GetDrawable(self):
-		if self.nDrIdx < 0:
-			raise RuntimeError('Error: Invalid drawable index for Entity', self.nID)
-		return Drawable.Drawable(self.mGM.cMatrixUI.GetDrawable(self.nDrIdx))
+    def GetDrawable(self):
+        if self.nDrIdx < 0:
+            raise RuntimeError('Error: Invalid drawable index for Entity', self.nID)
+        return Drawable.Drawable(self.mGM.cMatrixUI.GetDrawable(self.nDrIdx))
 
-	# This syncs up the C++ components with our ID
-	def SetComponentID(self):
-		self.GetShape().SetEntID(self.nID)
-		self.GetDrawable().SetEntID(self.nID)
+    # This syncs up the C++ components with our ID
+    def SetComponentID(self):
+        self.GetShape().SetEntID(self.nID)
+        self.GetDrawable().SetEntID(self.nID)
 
     # Returns ref to GM instance
-	def GetGrooveMatrix(self):
-		return self.mGM
+    def GetGrooveMatrix(self):
+        return self.mGM
 
-	# These are probably worthwhile
-	def __hash__(self):
-		return hash(self.nID)
-	def __eq__(self, other):
-		return self.nID == other.nID
+    # These are probably worthwhile
+    def __hash__(self):
+        return hash(self.nID)
+    def __eq__(self, other):
+        return self.nID == other.nID
 
     # Every state must implement OnLButtonUp
     def OnLButtonUp(self):
@@ -113,20 +113,20 @@ class MatrixEntity:
     def SetComponentID():
         pass
 
-	# Entity's can override this as they like, but
-	# the base should be called and use its return value
-	# to determine if the state should keep advancing
-	def Update(self):
-		return self.mSG.AdvanceState()
+    # Entity's can override this as they like, but
+    # the base should be called and use its return value
+    # to determine if the state should keep advancing
+    def Update(self):
+        return self.mSG.AdvanceState()
 
     # Base state class that inherits from StateGraph.State
     # Children must implement the OnLButtonUp and Advance functions
-	class _state(StateGraph.State):
-		def __init__(self, name):
-			StateGraph.State.__init__(self, str(name))
-		@abc.abstractmethod
-		def OnLButtonUp(self):
-			pass
-		@abc.abstractmethod
-		def Advance(self):
-			pass
+    class _state(StateGraph.State):
+        def __init__(self, name):
+            StateGraph.State.__init__(self, str(name))
+        @abc.abstractmethod
+        def OnLButtonUp(self):
+            pass
+        @abc.abstractmethod
+        def Advance(self):
+            pass

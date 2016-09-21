@@ -10,8 +10,8 @@ from collections import namedtuple
 
 class Row(MatrixEntity):
     # Rows are represented by a rect
-    nHeaderW = 100	# width of row header
-    nHeaderH = 50	# height of row header
+    nHeaderW = 100    # width of row header
+    nHeaderH = 50    # height of row header
 
     # Useful when constructing
     RowData = namedtuple('RowData', ('liClipData', 'clrOn', 'clrOff'))
@@ -125,7 +125,7 @@ class Row(MatrixEntity):
             def Activate(self, SG, prevState):
                 # If we are set to playing, our pending cell should be playing
                 # and our active cell should be None
-                if not(isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Playing) and self.mRow.GetActiveCell() == None)
+                if not(isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Playing) and self.mRow.GetActiveCell() == None):
                     raise RuntimeError('Error: Weird state transition!')
                 # The pending cell is now active
                 self.mRow.mActiveCell = self.mRow.mPendingCell
@@ -185,10 +185,10 @@ class Row(MatrixEntity):
 
             def Advance(self):
                 # None of our cells should have been playing
-                if any(isinstance(c.GetActiveState(), Cell.State.Playing for c in self.mRow.GetAllCells())):
+                if any(isinstance(c.GetActiveState(), Cell.State.Playing) for c in self.mRow.GetAllCells()):
                     raise RuntimeError('Error: Weird state transtion!')
                 # go to pending if any cells are pending
-                if any(isinstance(c, Cell.State.Pending for c in self.mRow.GetAllCells())):
+                if any(isinstance(c, Cell.State.Pending) for c in self.mRow.GetAllCells()):
                     return Row.State.Pending
 
 from Cell import Cell
