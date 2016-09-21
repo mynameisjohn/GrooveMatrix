@@ -40,17 +40,20 @@ class GrooveMatrix:
         self.Reset()
 
         # construct the keyboard button handler functions
+
         # Quit function
         def fnQuit(btn, keyMgr):
             nonlocal self
             self.cClipLauncher.SetPlayPause(False)
             self.cMatrixUI.SetQuitFlag(True)
         keyQuit = Button(sdl2.keycode.SDLK_ESCAPE, fnUp = fnQuit)
+
         # Play/pause
         def fnPlayPause(btn, keyMgr):
             nonlocal self
             self.cClipLauncher.SetPlayPause(not(self.cClipLauncher.GetPlayPause()))
         keyPlayPause = Button(sdl2.keycode.SDLK_SPACE, fnUp = fnPlayPause)
+
         # Construct the keyboard manager
         keyMgr = KeyboardManager([keyQuit, keyPlayPause])
 
@@ -108,6 +111,9 @@ class GrooveMatrix:
     def GetPreTrigger(self):
         return self.nPreTrigger
 
+    def GetClipLauncher(self):
+        return self.cClipLauncher
+
     def Reset(self):
         # The current sample pos is incremented by
         # the curSamplePos inc, which is a multiple of
@@ -126,9 +132,19 @@ class GrooveMatrix:
         self.setOn = set()
         self.setOff = set()
 
+    # Update all entities till they don't update no more,
+    # raise an error if some sanity limit is reached
+    def _SolveStateGraph(self):
+        nMaxIters = 15
+        for i in range(nMaxIters):
+            if all(e.Update() == False for e in self.setCells):
+                break
+        else:
+            raise RuntimeError('Error: Too many iterations needed to solve state graph!')
+
     # Go through and update drawables,
     # post any messages needed to the clip launcher
-    def Update(self):
+    def Update(self):)
         # Update ui, clip launcher
         # (clip launcher locks mutex)
         self.cClipLauncher.Update()
@@ -141,34 +157,48 @@ class GrooveMatrix:
             # reset sample counters
             self.Reset()
 
-            # Update all rows, determine if any should play
+            # If any rows are pending
             for row in self.diRows.values():
-                row.Update()
                 if isinstance(row.GetActiveState(), Row.State.Pending):
-                    # This is stupid... but in order to convince the row to start playing,
-                    # we set ourselves to be one sample away from the row trigger... dumb
-                    # I feel like it's only a matter of time before this screws me over
-                    self.nCurSamplePos = row.GetTriggerRes() - self.nPreTrigger - 1
-                    self.nCurSamplePosInc = 1
-                    row.Update()
+                    # We have to somehow convince the row to play...
+                    # Set it to playing directly and solve graph
+                    row.SetState(Row.State.Playing)
 
-            # Reset these two after advancing any pending rows
-            self.nCurSamplePos = 0
-            self.nCurSamplePosInc = 0
+            # After having done that, solve the state graph again to
+            # get any cells that should be playing to start playing
+            self._SolveStateGraph()
 
-            # If there is anything to turn on
+            # As a sanity check, the above should have put something in setOn
+            if len(self.setOn) == 0:
+                raise RuntimeError('Error: Why weren\'t there any playing cells?')
+
+            # # Update all rows, determine if any should play
+            # for row in self.diRows.values():
+            #     row.Update()
+            #     if isinstance(row.GetActiveState(), Row.State.Pending):
+            #         # This is stupid... but in order to convince the row to start playing,
+            #         # we set ourselves to be one sample away from the row trigger... dumb
+            #         # I feel like it's only a matter of time before this screws me over
+            #         self.nCurSamplePos = row.GetTriggerRes() - self.nPreTrigger - 1
+            #         self.nCurSamplePosInc = 1
+            #         row.Update()
+            #
+            # # Reset these two after advancing any pending rows
+            # self.nCurSamplePos = 0
+            # self.nCurSamplePosInc = 0
+
+            # If there is anything to turn on,
+            # construct command list
             if len(self.setOn):
                 liCmds = []
-                # Turn stuff on and start playing
                 for c in self.setOn:
-                    if c is not None:
-                        liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.nID, c.fVolume, c.nTriggerRes))
+                    liCmds.append((clCMD.cmdStartVoice, c.cClip.c_ptr, c.nID, c.fVolume, c.nTriggerRes))
+
+                # Reset our state and sets, post commands, start playback and get out
                 self.Reset()
                 self.cClipLauncher.HandleCommands(liCmds)
                 self.cClipLauncher.SetPlayPause(True)
-
-            # Get out
-            return
+                return
 
         # Determine how many buffers have advanced, calculate increment
         nCurNumBufs = self.cClipLauncher.GetNumBufsCompleted()
@@ -177,9 +207,17 @@ class GrooveMatrix:
             self.nCurSamplePosInc += nNumBufs * self.cClipLauncher.GetBufferSize()
             self.nNumBufsCompleted = nCurNumBufs
 
-        # Allow all cells/rows to update themselves given this increment
-        for row in self.diRows.values():
-            row.Update()
+        # Give entity's a chance to transition before applying the increment
+        self._SolveStateGraph()
+
+        # Update sample position and the like, zero increment
+        self.nCurSamplePos += self.nCurSamplePosInc
+        self.nCurSamplePosInc = 0
+        if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
+            self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
+
+        # for row in self.diRows.values():
+        #     row.Update()
 
         # Construct commands for any changing voices
         liCmds = []
@@ -188,20 +226,15 @@ class GrooveMatrix:
         for c in self.setOff:
             liCmds.append((clCMD.cmdStopVoice, c.cClip.c_ptr, c.nID, c.fVolume, c.nTriggerRes))
 
-        # Post to clip launcher
-        if len(liCmds):
-            self.cClipLauncher.HandleCommands(liCmds)
-
         # Clear these sets
         self.setOn = set()
         self.setOff = set()
 
-        # Update sample pos, maybe inc totalLoopCount and reset
-        self.nCurSamplePos += self.nCurSamplePosInc
-        self.nCurSamplePosInc = 0
-        if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
-            self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
+        # Post to clip launcher
+        if len(liCmds):
+            self.cClipLauncher.HandleCommands(liCmds)
 
+    # Construct and return C++ camera
     def GetCamera(self):
         return Camera.Camera(self.cMatrixUI.GetCameraPtr())
 
@@ -215,10 +248,8 @@ class GrooveMatrix:
         # Construct row and add to dict (Cells constructed by Row)
         r = Row(self, rowData, nPosY)
 
-        # Store row and all its cells in one container
+        # Store this row keyed by its name
         self.diRows[strName] = r
-        self.setEntities.add(r)
-        self.setEntities.update(c for c in r.liCells)
 
         # Get the previous col count and the new one
         nPrevCols = len(self.liCols)
@@ -234,3 +265,9 @@ class GrooveMatrix:
                 nPosX0 = r.liCells[0].GetDrawable().GetPos()[0]
                 nPosX = nPosX0 + len(self.liCols) * (Constants.nGap + Column.nTriDim)
                 self.liCols.append(Column(self, nPosX, {r.liCells[colIdx]}))
+
+
+        # Store all entities together for updating and whatnot
+        self.setEntities.add(r)
+        self.setEntities.update(c for c in r.liCells)
+        self.setEntities.update(c for c in self.liCols)

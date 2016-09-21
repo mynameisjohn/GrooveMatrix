@@ -73,6 +73,7 @@ class Row(MatrixEntity):
         G.add_edge(switching, playing)
         G.add_edge(switching, stopped)
 
+        # Call base constructor to construct state graph
         super(Row, self).__init__(self, GM, G, stopped)
 
     # Get the pending or active cell

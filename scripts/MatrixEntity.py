@@ -7,7 +7,7 @@ import Shape
 # Cells, Rows, and Columns all inherit
 # from this class. MatrixEntity's have
 # Drawable and Collision components, a
-# reference to a GM instance, and a 
+# reference to a GM instance, and a
 # StateGraph instance that must be
 # constructed with the child states
 #
@@ -18,11 +18,11 @@ import Shape
 #       - OnLButtonUp, which returns the state expected when clicked
 #       - Advance, which returns the next expected state given surroundings
 #   4. State advance functions can return None if no change is occurring
-# 
+#
 # For example, if I click a column that is Stopped, the column will return
 # Column.State.Pending as its next state. When the cells update, they will
-# look at their column - if they were stopped and the column is pending, 
-# they will return Cell.State.Pending. 
+# look at their column - if they were stopped and the column is pending,
+# they will return Cell.State.Pending.
 
 class MatrixEntity:
 	# class variable that keeps a counter
@@ -56,8 +56,8 @@ class MatrixEntity:
             nextState = self.GetActiveState().Advance()
             if nextState is not None:
                 return nextState
-        
-        # Construct state graph    
+
+        # Construct state graph
         self.mSG = StateGraph.StateGraph(dG, Matrix, fnAdvance, True)
 
     # State access functions
@@ -73,7 +73,7 @@ class MatrixEntity:
     # Set the state directly, this will
     # fail if the states are not neighbors
     def SetState(self, nextState):
-        if nextState != self.GetActiveState():
+        if nextState != self.GetActiveState() and nextState is not None:
             self.mSG.SetState(stateType(self))
 
     # Get the collision shape from the matrix UI object
@@ -108,10 +108,16 @@ class MatrixEntity:
         self.SetState(self.GetActiveState().OnLButtonUp())
 
     # Every subclass must implement this, it will be called
-    # once the entity is given a unique ID
+    # once the entity is given a unique ID. This is half baked...
     @abc.abstractmethod
     def SetComponentID():
         pass
+
+	# Entity's can override this as they like, but
+	# the base should be called and use its return value
+	# to determine if the state should keep advancing
+	def Update(self):
+		return self.mSG.AdvanceState()
 
     # Base state class that inherits from StateGraph.State
     # Children must implement the OnLButtonUp and Advance functions

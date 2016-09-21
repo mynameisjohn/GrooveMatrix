@@ -81,9 +81,12 @@ class StateGraph:
     def GetNextState(self):
         return self._fnAdvance(self)
 
-    # Actually advance the state coro and return next state
+    # Actually advance the state coro
+    # return true if state changes
     def AdvanceState(self):
-        return next(self._stateCoro)
+        prevState = self.GetActiveState()
+        next(self._stateCoro)
+        return prevState is not self.GetActiveState()
 
     # Just returns states in a container
     def GetAllStates(self):

@@ -53,6 +53,7 @@ class Column(MatrixEntity):
         G.add_edge(stopping, playing)
         G.add_edge(stopping, stopped)
 
+        # Call base constructor to construct state graph
         super(Column, self).__init__(GM, G, stopped)
 
     # A GM instance will own a list of rows and columns. Every time

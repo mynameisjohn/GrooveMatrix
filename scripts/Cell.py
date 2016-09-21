@@ -39,6 +39,7 @@ class Cell(MatrixEntity):
         G.add_edge(playing, stopping)
         G.add_edge(stopping, stopped)
 
+        # Call base constructor to construct state graph
         super(Cell, self).__init__(self, GM, G, stopped)
 
         # Set component IDs
@@ -84,9 +85,16 @@ class Cell(MatrixEntity):
             def OnLButtonUp(self):
                 return Cell.State.Stopped(self.mCell)
 
-            # Pending to Playing if we'll hit our trigger res
             def Advance(self):
+                # Pending to Playing if we'll hit our trigger res
                 if self.mCell.WillTriggerBeHit():
+                    return Cell.State.Playing(self.mCell)
+                # Pending to playing if our row is set to playing
+                if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Playing):
+                    # Although as a sanity check, this doesn't really happen unless
+                    # the clip launcher is stopped (and is about to start playing)
+                    if self.mCell.GetGrooveMatrix().GetClipLauncher().GetPlayPause():
+                        raise RuntimeError('Error: Cell set to playing by Row during playback')
                     return Cell.State.Playing(self.mCell)
 
         class Playing(_state):
