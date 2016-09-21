@@ -26,14 +26,16 @@ class Column(MatrixEntity):
         nHalfTri = Column.nTriDim / 2
         nColY = GM.GetCamera().GetScreenHeight() - (Constants.nGap + nHalfTri)
         triVerts = [[-nHalfTri, -nHalfTri], [nHalfTri, -nHalfTri], [0, nHalfTri]]
+        
+        # Create triangle shape
         self.nShIdx = GM.cMatrixUI.AddShape(Shape.Triangle, [nPosX, nColY], {
             'aX' : triVerts[0][0], 'aY' : triVerts[0][1],
             'bX' : triVerts[1][0], 'bY' : triVerts[1][1],
             'cX' : triVerts[2][0], 'cY' : triVerts[2][1]})
-        self.nDrIdx = GM.cMatrixUI.AddDrawableTri('col'+str(self.nID), triVerts, [nPosX, nColY], [1, 1], self.clrOff, 0. )
 
-        # Set Component IDs
-        self.SetComponentID()
+        # Create triangle drawable, column needs an ID now
+        self.nID = MatrixEntity.NewID()
+        self.nDrIdx = GM.cMatrixUI.AddDrawableTri('col'+str(self.nID), triVerts, [nPosX, nColY], [1, 1], self.clrOff, 0. )
 
         # If a GM instance is making us with cells, they get stored here
         self.setCells = {c for c in setCells if isinstance(c, Cell)}
@@ -55,6 +57,9 @@ class Column(MatrixEntity):
 
         # Call base constructor to construct state graph
         super(Column, self).__init__(GM, G, stopped)
+
+        # Set Component IDs
+        self.SetComponentID()
 
     # A GM instance will own a list of rows and columns. Every time
     # a row is added to the GM, it will look at its columns and add
@@ -111,3 +116,31 @@ class Column(MatrixEntity):
                 # Stopped if all are stopped
                 if all(isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
                     return Column.State.Stopped(self)
+
+        class Stopping(_state):
+            def __init__(self, col):
+                super(type(self), self).__init__(col, 'Stopping')
+                
+            @contextlib.contextmanager
+            def Activate(self, SG, prevState):
+                yield
+    
+            def Advance(self):
+                return super().Advance()
+
+            def OnLButtonUp(self):
+                return super().OnLButtonUp()
+
+        class Stopped(_state):
+            def __init__(self, col):
+                super(type(self), self).__init__(col, 'Stopped')
+                
+            @contextlib.contextmanager
+            def Activate(self, SG, prevState):
+                yield
+    
+            def Advance(self):
+                return super().Advance()
+
+            def OnLButtonUp(self):
+                return super().OnLButtonUp()

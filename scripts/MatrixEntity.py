@@ -41,13 +41,19 @@ class MatrixEntity:
     # construct the state graph, and it should be
     # called after the child constructor
     def __init__(self, GM, dG, s0):
-        # Set ID, store GM
-        self.nID = MatrixEntity.NewID()
+        # Set ID if not already done
+        if hasattr(self, 'nID') == False:
+            self.nID = MatrixEntity.NewID()
+        
+        # Store GM
         self.mGM = GM
 
-        # Init these to -1, eventually they'll be subclass specific
-        self.nShIdx = -1
-        self.nDrIdx = -1
+        # Init these to -1 if not already created,
+        # eventually they'll be subclass specific
+        if hasattr(self, 'nShIdx') == False:
+            self.nShIdx = -1
+        if hasattr(self, 'nDrIdx') == False:
+            self.nDrIdx = -1
 
         # Because of the way entity state transitions work,
         # every entity should use this advance function for its graph
@@ -56,9 +62,10 @@ class MatrixEntity:
             nextState = self.GetActiveState().Advance()
             if nextState is not None:
                 return nextState
+            return self.GetActiveState()
 
         # Construct state graph
-        self.mSG = StateGraph.StateGraph(dG, Matrix, fnAdvance, True)
+        self.mSG = StateGraph.StateGraph(dG, fnAdvance, s0, True)
 
     # State access functions
     def GetActiveState(self):
@@ -106,12 +113,6 @@ class MatrixEntity:
     # Every state must implement OnLButtonUp
     def OnLButtonUp(self):
         self.SetState(self.GetActiveState().OnLButtonUp())
-
-    # Every subclass must implement this, it will be called
-    # once the entity is given a unique ID. This is half baked...
-    @abc.abstractmethod
-    def SetComponentID():
-        pass
 
     # Entity's can override this as they like, but
     # the base should be called and use its return value

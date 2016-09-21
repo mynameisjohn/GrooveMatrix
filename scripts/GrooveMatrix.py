@@ -137,7 +137,7 @@ class GrooveMatrix:
 	def _SolveStateGraph(self):
 		nMaxIters = 15
 		for i in range(nMaxIters):
-			if all(e.Update() == False for e in self.setCells):
+			if all(e.Update() == False for e in self.setEntities):
 				break
 		else:
 			raise RuntimeError('Error: Too many iterations needed to solve state graph!')

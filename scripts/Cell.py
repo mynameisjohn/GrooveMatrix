@@ -40,7 +40,7 @@ class Cell(MatrixEntity):
         G.add_edge(stopping, stopped)
 
         # Call base constructor to construct state graph
-        super(Cell, self).__init__(self, GM, G, stopped)
+        super(Cell, self).__init__(GM, G, stopped)
 
         # Set component IDs
         self.SetComponentID()
@@ -48,7 +48,7 @@ class Cell(MatrixEntity):
     # Until I can find a way to get both row and col in constructor
     # Column constructor should call this
     def SetCol(self, col):
-        if isinstance(col, Column.Column):
+        if isinstance(col, Column):
             self.mCol = col
 
     def GetRow(self):
@@ -170,7 +170,7 @@ class Cell(MatrixEntity):
 
             # We'll advance to Pending if our column is pending
             def Advance(self):
-                if isinstance(self.mCell.GetCol().GetState(), Column.State.Pending):
+                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Pending):
                     return Cell.State.Pending(self.mCell)
 
 from Row import Row

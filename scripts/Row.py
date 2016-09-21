@@ -56,9 +56,6 @@ class Row(MatrixEntity):
         self.mActiveCell = None
         self.mPendingCell = None
 
-        # Set Component IDs
-        self.SetComponentID()
-
         # Create state graph nodes
         pending = Row.State.Pending(self)
         playing = Row.State.Playing(self)
@@ -74,7 +71,10 @@ class Row(MatrixEntity):
         G.add_edge(switching, stopped)
 
         # Call base constructor to construct state graph
-        super(Row, self).__init__(self, GM, G, stopped)
+        super(Row, self).__init__(GM, G, stopped)
+
+        # Set Component IDs
+        self.SetComponentID()
 
     # Get the pending or active cell
     def GetPendingCell(self):
@@ -112,9 +112,9 @@ class Row(MatrixEntity):
             # Pending to playing if pending is playing,
             # otherwise to stopped if pending is stopped
             def Advance(self):
-                if isinstance(self.mRow.GetPendingCell().GetState(), Cell.State.Playing):
+                if isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Playing):
                     return Row.State.Playing(self.mRow)
-                if isinstance(self.mRow.GetPendingCell().GetState(), Cell.State.Stopped):
+                if isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Stopped):
                     return Row.State.Stopped(self.mRow)
 
         class Playing(_state):
@@ -138,9 +138,9 @@ class Row(MatrixEntity):
             # Pending to playing if pending is playing,
             # otherwise to stopped if pending is stopped
             def Advance(self):
-                if isinstance(self.mRow.GetPendingCell().GetState(), Cell.State.Playing):
+                if isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Playing):
                     return Row.State.Playing(self.mRow)
-                if isinstance(self.mRow.GetPendingCell().GetState(), Cell.State.Stopped):
+                if isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Stopped):
                     return Row.State.Stopped(self.mRow)
 
         class Switching(_state):
