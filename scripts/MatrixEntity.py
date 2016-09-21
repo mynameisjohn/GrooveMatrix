@@ -81,7 +81,7 @@ class MatrixEntity:
     # fail if the states are not neighbors
     def SetState(self, nextState):
         if nextState != self.GetActiveState() and nextState is not None:
-            self.mSG.SetState(stateType(self))
+            self.mSG.SetState(nextState)
 
     # Get the collision shape from the matrix UI object
     def GetShape(self):

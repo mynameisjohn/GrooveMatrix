@@ -27,12 +27,13 @@ int main( int argc, char ** argv )
 		{
 			while ( M.GetQuitFlag() == false )
 			{
+				obMainScript.call( "Update" );
+
 				SDL_Event e;
 				while ( SDL_PollEvent( &e ) )
 				{
 					obMainScript.call( "HandleEvent", &e );
 				}
-				obMainScript.call( "Update" );
 			}
 		}
 

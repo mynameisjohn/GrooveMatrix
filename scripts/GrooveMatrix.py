@@ -157,13 +157,15 @@ class GrooveMatrix:
             # reset sample counters
             self.Reset()
 
+            self._SolveStateGraph()
+
             # If any rows are pending
             bStartPlaying = False
             for row in self.diRows.values():
-                if isinstance(row.GetActiveState(), Row.State.Pending):
+                if isinstance(row.GetActiveState(), Row.State.Switching):
                     # We have to somehow convince the row to play...
                     # Set it to playing directly and solve graph
-                    row.SetState(Row.State.Playing)
+                    row.SetState(Row.State.Playing(row))
                     bStartPlaying = True
 
             # Get out if no rows are pending
