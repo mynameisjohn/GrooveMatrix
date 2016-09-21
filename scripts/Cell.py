@@ -12,9 +12,6 @@ class Cell(MatrixEntity):
 
     # Constructor takes GM, row, a clip, and the initial volume
     def __init__(self, GM, row, cClip, fVolume):
-        # set up ID
-        super(Cell, self).__init__(GM)
-
         # Store cClip ref and volume
         self.cClip = cClip
         self.fVolume = float(fVolume)
@@ -27,9 +24,6 @@ class Cell(MatrixEntity):
         # Set up UI components
         self.nShIdx = GM.cMatrixUI.AddShape(Shape.Circle, [0, 0], {'r' : Cell.nRadius})
         self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/circle.iqm', [0, 0], 2 * [2*Cell.nRadius], [0, 0, 0, 1], 0. )
-
-        # Set component IDs
-        self.SetComponentID()
 
         # Create state graph nodes
         pending = Cell.State.Pending(self)
@@ -45,9 +39,10 @@ class Cell(MatrixEntity):
         G.add_edge(playing, stopping)
         G.add_edge(stopping, stopped)
 
-        # Create state graph with above variables,
-        # set initial state to stopped, declare _mNextState = stopped
-        self.mSG = StateGraph.StateGraph(G, MatrixEntity.fnAdvance, stopped, True)
+        super(Cell, self).__init__(self, GM, G, stopped)
+
+        # Set component IDs
+        self.SetComponentID()
 
     # Until I can find a way to get both row and col in constructor
     # Column constructor should call this

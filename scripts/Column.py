@@ -16,9 +16,6 @@ class Column(MatrixEntity):
 
     # Constructor takes rowData, GM, and y position
     def __init__(self, GM, nPosX, setCells):
-        # Get ID
-        super(Column, self).__init__(GM)
-
         # Move cells to correct pos, set colors
         self.clrOn = [1,1,1,1]
         self.clrOff = [1,1,1,1]
@@ -56,9 +53,7 @@ class Column(MatrixEntity):
         G.add_edge(stopping, playing)
         G.add_edge(stopping, stopped)
 
-        # Create state graph member, init state to stopped
-        self.mSG =  StateGraph.StateGraph(G, MatrixEntity.fnAdvance, stopped, True)
-
+        super(Column, self).__init__(GM, G, stopped)
 
     # A GM instance will own a list of rows and columns. Every time
     # a row is added to the GM, it will look at its columns and add
@@ -106,9 +101,6 @@ class Column(MatrixEntity):
                 return Column.State.Stopping(self.mCol)
 
             def Advance(self):
-                # Stopping if all are stopping
-                if all(isinstance(c.GetActiveState(), Cell.State.Stopping for c in self.mCol.setCells)):
-                    return Column.State.Stopping
                 # Stopping if all are stopping
                 if all(isinstance(c.GetActiveState(), Cell.State.Stopping for c in self.mCol.setCells)):
                     return Column.State.Stopping

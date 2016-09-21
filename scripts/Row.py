@@ -18,9 +18,6 @@ class Row(MatrixEntity):
 
     # Constructor takes rowData, GM, and y position
     def __init__(self, GM, rowData, nPosY):
-        # Get ID
-        super(Row, self).__init__(GM)
-
         # Create UI components
         nRowX = Constants.nGap + Row.nHeaderW / 2
         self.nShIdx = GM.cMatrixUI.AddShape(Shape.AABB, [nRowX, nPosY], {'w' : Row.nHeaderW, 'h': Row.nHeaderH})
@@ -76,8 +73,7 @@ class Row(MatrixEntity):
         G.add_edge(switching, playing)
         G.add_edge(switching, stopped)
 
-        # Create state graph member, init state to stopped
-        self.mSG =  StateGraph.StateGraph(G, MatrixEntity.fnAdvance, stopped, True)
+        super(Row, self).__init__(self, GM, G, stopped)
 
     # Get the pending or active cell
     def GetPendingCell(self):
@@ -89,16 +85,21 @@ class Row(MatrixEntity):
     def GetAllCells(self):
         return self.liCells
 
+    # Row state and base class, inherits from
+    # MatrixEntity state and caches Row ref
     class State:
         class _state(MatrixEntity._state):
             def __init__(self, row, name):
                 MatrixEntity._state.__init__(self, name)
                 self.mRow = row
 
+        # The Pending Row state
         class Pending(_state):
             def __init__(self, row):
                 super(type(self), self).__init__(row, 'Pending')
 
+            # Ideally this would kick off some animation
+            # indicating that the row is pending playback
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
                 yield
