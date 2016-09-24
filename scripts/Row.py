@@ -93,65 +93,103 @@ class Row(MatrixEntity):
                 MatrixEntity._state.__init__(self, name)
                 self.mRow = row
 
-        ## The Pending Row state
-        #class Pending(_state):
-        #    def __init__(self, row):
-        #        super(type(self), self).__init__(row, 'Pending')
+        # The stopped state of a row indicates that
+        # none of its cells are playing
+        class Stopped(_state):
+            def __init__(self, row):
+                super(type(self), self).__init__(row, 'Stopped')
 
-        #    # Ideally this would kick off some animation
-        #    # indicating that the row is pending playback
-        #    @contextlib.contextmanager
-        #    def Activate(self, SG, prevState):
-        #        yield
+            # When a row is stopped, it should set its
+            # active cell to stopped if it has one -
+            # if it was stopping then everything is fine,
+            # and if it wasn't then we'll raise  an error
+            @contextlib.contextmanager
+            def Activate(self, SG, prevState):
+                if self.mRow.mActiveCell is not None:
+                    self.mRow.mActiveCell.SetState(Cell.State.Stopped(self.mRow.mActiveCell))ll))
+                    self.mRow.mActiveCell = None
+                # set color appropriately
+                yield
 
-        #    # Revert to stopped if clicked
-        #    def OnLButtonUp(self):
-        #        return Row.State.Stopped(self.mRow)
+            # Clicking a stopped row does nothing
+            def OnLButtonUp(self):
+                pass
 
-        #    # Pending to playing if pending is playing,
-        #    # otherwise to stopped if pending is stopped
-        #    def Advance(self):
-        #        if isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Playing):
-        #            return Row.State.Playing(self.mRow)
-        #        if isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Stopped):
-        #            return Row.State.Stopped(self.mRow)
+            # A stopped row will switch to any pending cells
+            def Advance(self):
+                for c in self.mRow.GetAllCells():
+                    if isinstance(c.GetActiveState(), Cell.State.Pending):
+                        return Row.State.Switching(self.mRow, c)
 
+        # A playing row indicates that it has an active playing cell
         class Playing(_state):
             def __init__(self, row):
                 super(type(self), self).__init__(row, 'Playing')
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # The pending cell is now active
+                # If we came to this state from switching, it means
+                # that the switch was cancelled - revert the cell states
+                # of our pending and active cells to stopped, playing resp.
+                if isinstance(prevState, Column.State.Switching):
+                    self.mRow.mActiveCell.SetState(Cell.State.Playing(self.mRow.mActiveCell))
+                    if self.mRow.mPendingCell is not None:
+                        if self.mRow.mPendingCell is not self.mRow.mActiveCell:
+                            self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
+                            self.mRow.mPendingCell = self.mRow.mActiveCell
+                # The pending cell is now active and playing
                 self.mRow.mActiveCell = self.mRow.mPendingCell
+                self.mRow.mActiveCell.SetState(Cell.State.Playing)
                 yield
 
             # Switch to None if clicked
             def OnLButtonUp(self):
                 return Row.State.Switching(self.mRow, None)
 
-            # Pending to playing if pending is playing,
-            # otherwise to stopped if pending is stopped
+            # We'll go to switching if we have a pending cell
+            # or to stopping if our active cell is stopping
             def Advance(self):
-                # If I'm playing and any of my cells are pending, we are switchinig to that cell
+                # If any of our cells are pending
                 for c in self.mRow.GetAllCells():
                     if isinstance(c.GetActiveState(), Cell.State.Pending):
+                        # We are switching to the new pending cell
                         return Row.State.Switching(self.mRow, c)
-                # If none were pending and any are stopping, then we're stopping (switching to None)
-                if any(isinstance(c, Cell.State.Stopping) for c in self.mRow.GetAllCells()):
+                # If none were pending and our active state is stopping, we are stopping
+                if isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Stopping):
                     return Row.State.Switching(self.mRow, None)
 
+        # The switching state denotes that the row's active cell is
+        # changing - this could mean that the row is pending, switching
+        # to a different active cell, or stopping
         class Switching(_state):
             def __init__(self, row, nextCell = None):
                 super(type(self), self).__init__(row, 'Switching')
                 # store next cell, don't assign yet
                 self.mNextCell = nextCell
 
+            # When a row becomes switching, it's pending
+            # cell is set to this state's next cell member
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # When state is entered, change row member
+                # The next cell shouldn't be the row's current active cell
+                if self.mNextCell is self.mRow.mActiveCell:
+                    raise RuntimeError('Error: Why was row switching to active?')
+                # If the previous state was playing, we are switching to a new voice
+                if isinstance(prevState, Row.State.Playing):
+                    # If we had a pending cell that was different from the next cell, stop it
+                    if self.mRow.mPendingCell is not None:
+                        if self.mNextCell is not self.mRow.mPendingCell:
+                            self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
+                    # Set our active cell to stopping
+                    self.mRow.mActiveCell.SetState(Cell.State.Stopping(self.mRow.mActiveCell)
+                # Set row's pending to our next
                 self.mRow.mPendingCell = self.mNextCell
-                # If none, indicate stopping state
+                # If our pending cell isn't None, set it to pending
+                if self.mRow.mPendingCell is not None:
+                    self.mRow.mPendingCell.SetState(Cell.State.Pending(self.mRow.mPendingCell))
+                # Depending on what the next cell is
+                # we could be starting, stopping, or switching
+                # Update UI appropriately
                 yield
 
             # If we're switching and clicked, revert to playing
@@ -168,26 +206,5 @@ class Row(MatrixEntity):
                         raise RuntimeError('Error: Weird state transtion!')
                     if isinstance(self.mActiveCell, Cell.State.Stopped):
                         return Row.State.Stopped(self.mRow)
-
-        class Stopped(_state):
-            def __init__(self, row):
-                super(type(self), self).__init__(row, 'Stopped')
-
-            @contextlib.contextmanager
-            def Activate(self, SG, prevState):
-                yield
-
-            # Clicking a stopped row does nothing
-            def OnLButtonUp(self):
-                pass
-
-            def Advance(self):
-                # None of our cells should have been playing
-                if any(isinstance(c.GetActiveState(), Cell.State.Playing) for c in self.mRow.GetAllCells()):
-                    raise RuntimeError('Error: Weird state transtion!')
-                # If any cells are pending, we are switching to that cell
-                for c in self.mRow.GetAllCells():
-                    if isinstance(c.GetActiveState(), Cell.State.Pending):
-                        return Row.State.Switching(self.mRow, c)
 
 from Cell import Cell

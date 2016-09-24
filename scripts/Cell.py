@@ -67,18 +67,49 @@ class Cell(MatrixEntity):
         nTrigger = self.GetTriggerRes() - self.mGM.GetPreTrigger()
         return nCurPos < nTrigger and nNewPos >= nTrigger
 
+    # Cell States
     class State:
         class _state(MatrixEntity._state):
             def __init__(self, cell, name):
                 MatrixEntity._state.__init__(self, name)
                 self.mCell = cell
 
+        # The stopped cell indicates that this cell's voice is quiet
+        class Stopped(_state):
+            def __init__(self, cell):
+                super(type(self), self).__init__(cell, 'Stopped')
+
+            @contextlib.contextmanager
+            def Activate(self, SG, prevState):
+                # Stop any voices we may have started
+                self.mCell.GetGrooveMatrix().StopCell(self.mCell)
+                # set the color to off
+                self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOff)
+                yield
+
+            # Clicking a stopped cell will make it pending
+            def OnLButtonUp(self):
+                return Cell.State.Pending(self.mCell)
+
+            # We'll advance to Pending if our column is pending
+            def Advance(self):
+                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Pending):
+                    return Cell.State.Pending(self.mCell)
+
+
+        # The pending state indicates that a cell will play when it's trigger res is hit
         class Pending(_state):
             def __init__(self, cell):
                 super(type(self), self).__init__(cell, 'Pending')
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
+                # When a cell becomes pending,
+                # we should set the row's state to switching
+                self.mCell.mRow.SetState(Row.State.Switching(self.mCell))
+                # And set our column to pending if it was stopped
+                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Stopped):
+                    self.mCell.GetCol().SetState(Column.State.Pending(self.mCell.GetCol()))
                 yield
 
             # Revert to stopped if clicked
@@ -88,13 +119,6 @@ class Cell(MatrixEntity):
             def Advance(self):
                 # Pending to Playing if we'll hit our trigger res
                 if self.mCell.WillTriggerBeHit():
-                    return Cell.State.Playing(self.mCell)
-                # Pending to playing if our row is set to playing
-                if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Playing):
-                    # Although as a sanity check, this doesn't really happen unless
-                    # the clip launcher is stopped (and is about to start playing)
-                    if self.mCell.GetGrooveMatrix().GetClipLauncher().GetPlayPause():
-                        raise RuntimeError('Error: Cell set to playing by Row during playback')
                     return Cell.State.Playing(self.mCell)
 
         class Playing(_state):
@@ -149,29 +173,6 @@ class Cell(MatrixEntity):
                 # Otherwise, if our trigger will be hit, we're stopped
                 if self.mCell.WillTriggerBeHit():
                     return Cell.State.Stopped(self.mCell)
-
-        class Stopped(_state):
-            def __init__(self, cell):
-                super(type(self), self).__init__(cell, 'Stopped')
-
-            @contextlib.contextmanager
-            def Activate(self, SG, prevState):
-                # If the previous state was playing,
-                # we've got to stop any playing voices
-                if isinstance(prevState, Cell.State.Playing):
-                    self.mCell.GetGrooveMatrix().StopCell(self.mCell)
-                # set the color to off
-                self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOff)
-                yield
-
-            # Clicking a stopped cell will make it pending
-            def OnLButtonUp(self):
-                return Cell.State.Pending(self.mCell)
-
-            # We'll advance to Pending if our column is pending
-            def Advance(self):
-                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Pending):
-                    return Cell.State.Pending(self.mCell)
 
 from Row import Row
 from Column import Column

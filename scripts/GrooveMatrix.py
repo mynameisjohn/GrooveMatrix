@@ -160,12 +160,12 @@ class GrooveMatrix:
             # Jostle the graph to let any rows start pending
             self._SolveStateGraph()
 
-            # If any rows are pending
+            # If any rows have pending cells
             bStartPlaying = False
             for row in self.diRows.values():
                 if isinstance(row.GetActiveState(), Row.State.Switching):
-                    # Set it to playing directly and solve graph
-                    row.SetState(Row.State.Playing(row))
+                    # Get the pending cell and set it to playing directly
+                    row.GetPendingCell().SetState(Cell.State.Playing(row.GetPendingCell()))
                     bStartPlaying = True
 
             # Get out if no rows are pending
