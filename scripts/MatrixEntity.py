@@ -12,7 +12,22 @@ import Shape
 # constructed with the child states
 #
 # The design philosophy of these states must be such that
-#   1. No Entity can modify other entities or another entity's state
+#   1. No Entity can modify other entities or another entity's state,
+#      except during a state context activation...? What are the downsides
+#      to that... None I suppose. Well let's find out. What has to happen is
+#       - Column sets cell state to pending
+#       - If the cell was already pending, don't do anything
+#       - If the state transition is impossible, don't do anything
+#       - If the state transition is possible, do it...
+#       I just don't want to end up in a rathole of if statements, which
+#       is why I liked having that logic localized to the entity.
+#       However the case that this is meant to address is this:
+#           If I set a column pending and then advance all entities, 
+#           it's possible that the column gets updated first, sees that
+#           all its Cells are stopped, and sets itself to stopped. Maybe
+#           I shouldn't have Column state depending on Cell state, but I 
+#           need to handle the case where a column is set to pending and
+#           then all its cells are manually set to stopped. 
 #   2. An entity can modify itself, but not change its state directly
 #   3. An entity can indirectly change its state from
 #       - OnLButtonUp, which returns the state expected when clicked

@@ -157,13 +157,13 @@ class GrooveMatrix:
             # reset sample counters
             self.Reset()
 
+            # Jostle the graph to let any rows start pending
             self._SolveStateGraph()
 
             # If any rows are pending
             bStartPlaying = False
             for row in self.diRows.values():
                 if isinstance(row.GetActiveState(), Row.State.Switching):
-                    # We have to somehow convince the row to play...
                     # Set it to playing directly and solve graph
                     row.SetState(Row.State.Playing(row))
                     bStartPlaying = True
@@ -179,21 +179,6 @@ class GrooveMatrix:
             # As a sanity check, the above should have put something in setOn
             if len(self.setOn) == 0:
                 raise RuntimeError('Error: Why weren\'t there any playing cells?')
-
-            # # Update all rows, determine if any should play
-            # for row in self.diRows.values():
-            #     row.Update()
-            #     if isinstance(row.GetActiveState(), Row.State.Pending):
-            #         # This is stupid... but in order to convince the row to start playing,
-            #         # we set ourselves to be one sample away from the row trigger... dumb
-            #         # I feel like it's only a matter of time before this screws me over
-            #         self.nCurSamplePos = row.GetTriggerRes() - self.nPreTrigger - 1
-            #         self.nCurSamplePosInc = 1
-            #         row.Update()
-            #
-            # # Reset these two after advancing any pending rows
-            # self.nCurSamplePos = 0
-            # self.nCurSamplePosInc = 0
 
             # If there is anything to turn on,
             # construct command list
@@ -223,9 +208,6 @@ class GrooveMatrix:
         self.nCurSamplePosInc = 0
         if self.nCurSamplePos >= self.cClipLauncher.GetMaxSampleCount():
             self.nCurSamplePos %= self.cClipLauncher.GetMaxSampleCount()
-
-        # for row in self.diRows.values():
-        #     row.Update()
 
         # Construct commands for any changing voices
         liCmds = []

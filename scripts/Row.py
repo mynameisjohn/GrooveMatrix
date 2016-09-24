@@ -122,10 +122,6 @@ class Row(MatrixEntity):
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # If we are set to playing, our pending cell should be playing
-                # and our active cell should be None
-                #if not(isinstance(self.mRow.GetPendingCell().GetActiveState(), Cell.State.Playing) and self.mRow.GetActiveCell() == None):
-                #    raise RuntimeError('Error: Weird state transition!')
                 # The pending cell is now active
                 self.mRow.mActiveCell = self.mRow.mPendingCell
                 yield

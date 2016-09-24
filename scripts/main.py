@@ -16,8 +16,9 @@ from ClipLauncher import ClipLauncher, Clip
 
 from Util import Constants, ctype_from_addr
 from GrooveMatrix import Row, Cell, GrooveMatrix, Column
-
 import InputManager
+
+import random
 
 # global groove matrix instance
 g_GrooveMatrix = None
@@ -38,6 +39,14 @@ def Initialize(pMatrixUI, pClipLauncher):
         dif=.4
         clrOn = [.5 - dif if i==ix else 0 for i in range(3)]+[1]
         clrOff = [.5 + dif if i==ix else 0 for i in range(3)]+[1]
+        return (clrOn, clrOff)
+
+    # Like above but makes a random color
+    def makeColor():
+        clrOn = [0. for i in range(4)]
+        for i in range(len(clrOn)):
+            clrOn[i] = random.uniform(0.5, 0.9)
+        clrOff = [c/2 for c in clrOn]
         return (clrOn, clrOff)
 
     # Declare all clips (clip creation args as tuples)

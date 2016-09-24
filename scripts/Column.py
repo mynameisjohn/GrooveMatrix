@@ -68,6 +68,7 @@ class Column(MatrixEntity):
         self.setCells.add(cell)
         cell.SetCol(self)
 
+
     class State:
         class _state(MatrixEntity._state):
             def __init__(self, col, name):
@@ -80,6 +81,11 @@ class Column(MatrixEntity):
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
+                # When a column is set to pending, set all its cells
+                # to pending. If that isn't possible, there's probably
+                # some exception I should be handling...
+                for c in self.mCol.setCells:
+                    c.SetState(Cell.State.Pending(c))
                 yield
 
             # Revert to stopped if clicked
@@ -123,13 +129,22 @@ class Column(MatrixEntity):
                 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
+                for c in self.mCol.setCells:
+                    c.SetState(Cell.State.Stopping(c))
                 yield
     
+            # A column will advance to stopped if 
+            # all its cells have stopped, presumably
+            # it couldn't have been set to stopping
+            # without being in the playing state first
             def Advance(self):
-                return super().Advance()
+                if all(isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
+                    return Column.State.Stopped(self.mCol)
 
+            # If a column is stopping and it gets clicked,
+            # it should revert to playing (I think)
             def OnLButtonUp(self):
-                return super().OnLButtonUp()
+                return Column.State.Playing(self.mCol)
 
         class Stopped(_state):
             def __init__(self, col):
@@ -137,10 +152,32 @@ class Column(MatrixEntity):
                 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
+                # When a column is set to stopped, it's possible that it was just pending
+                if isinstance(prevState, Column.State.Pending):
+                    # If that's the case, we have to make sure all our cells are stopped
+                    for c in self.mCol.setCells:
+                        # These should have all been pending
+                        if not(isinstance(c.GetActiveState(), Cell.State.Pending)):
+                            raise RuntimeError('Error: Why did a pending column have not pending cells?')
+                if not(all(isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells)):
+                    raise RuntimeError('Error: Why was column stopped if cells arent\' stopped?')
+                # This should start flashing or something
                 yield
-    
+   
             def Advance(self):
-                return super().Advance()
+                # A column will be pending if any of its cells are pending. The intent here is to
+                # allow users to start/stop the entire column in one go. The same goes for playing,
+                # but theoretically a cell can't be playing if it wasn't pending (which means, by
+                # this logic, that a column can't be playing unless it was pending)
+                if any(isinstance(c.GetActiveState(), Cell.State.Pending) for c in self.mCol.setCells):
+                    return Column.State.Pending(self.mCol)
+                # I'm not sure if there is a precedent for a column
+                # going to playing from stopped... it should have been
+                # set to pending first by the update. 
 
+            # When a stopped column is clicked,
+            # it should set itself to pending. 
+            # its cells should see this and set
+            # themselves to pending accordingly
             def OnLButtonUp(self):
-                return super().OnLButtonUp()
+                return Column.State.Pending(self.mCol)

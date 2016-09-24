@@ -197,6 +197,8 @@ bool ClipLauncher::HandleCommands( std::list<Command> liCommands )
 	if ( liCommands.empty() )
 		return false;
 
+    // If anything wants to start playing before we're playing,
+    // make sure it's trigger resolution is 0 (why? Let clients do it)
 	for ( Command& cmd : liCommands)
 		if ( cmd.eID == ECommandID::StartVoice && m_bPlaying == false )
 			cmd.uData = 0;
