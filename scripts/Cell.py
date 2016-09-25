@@ -75,14 +75,16 @@ class Cell(MatrixEntity):
                 self.mCell = cell
 
         # The stopped cell indicates that this cell's voice is quiet
+        # It will go to pending if clicked or if the column is pending
         class Stopped(_state):
             def __init__(self, cell):
                 super(type(self), self).__init__(cell, 'Stopped')
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # Stop any voices we may have started
-                self.mCell.GetGrooveMatrix().StopCell(self.mCell)
+                # If we were stopping, stop any voices
+                if isinstance(prevState, Cell.State.Stopping):
+                    self.mCell.GetGrooveMatrix().StopCell(self.mCell)
                 # set the color to off
                 self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOff)
                 yield
@@ -91,25 +93,20 @@ class Cell(MatrixEntity):
             def OnLButtonUp(self):
                 return Cell.State.Pending(self.mCell)
 
-            # We'll advance to Pending if our column is pending
+            # The column will set us pending if clicked
             def Advance(self):
-                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Pending):
-                    return Cell.State.Pending(self.mCell)
+                pass
 
-
-        # The pending state indicates that a cell will play when it's trigger res is hit
+        # A pending cell will go to playing if the trigger res is hit
+        # and stopped if clicked. Rows and colums will see a pending cell
+        # and advance if necessary
         class Pending(_state):
             def __init__(self, cell):
                 super(type(self), self).__init__(cell, 'Pending')
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # When a cell becomes pending,
-                # we should set the row's state to switching
-                self.mCell.mRow.SetState(Row.State.Switching(self.mCell))
-                # And set our column to pending if it was stopped
-                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Stopped):
-                    self.mCell.GetCol().SetState(Column.State.Pending(self.mCell.GetCol()))
+                # The cell should start flashing or something
                 yield
 
             # Revert to stopped if clicked
@@ -121,35 +118,38 @@ class Cell(MatrixEntity):
                 if self.mCell.WillTriggerBeHit():
                     return Cell.State.Playing(self.mCell)
 
+        # Playing state means this cell's voice is playing
         class Playing(_state):
             def __init__(self, cell):
                 super(type(self), self).__init__(cell, 'Playing')
 
             @contextlib.contextmanager
-            # When a cell starts playing, it tells the GM what to play
             def Activate(self, SG, prevState):
                 # We should have been the row's pending cell
                 if self.mCell.GetRow().GetPendingCell() is not self.mCell:
                     raise RuntimeError('Weird state transition')
+                # If we weren't already playing, tell GM to play our stuff
+                if not(isinstance(prevState, Cell.State.Stopping)):
+                    self.mCell.mGM.StartCell(self.mCell)
                 # set color to on
                 self.mCell.GetDrawable().SetColor(self.mCell.mRow.clrOn)
-                # Tell GM to start playing my stuff
-                self.mCell.mGM.StartCell(self.mCell)
                 yield
 
             # Set to stopping if clicked
             def OnLButtonUp(self):
                 return Cell.State.Stopping(self.mCell)
 
-            # Pending to Playing if we'll hit our trigger res
+            # Our row will advance us to stopping if pending changes,
+            # and our column will set us to stopping if it is stopping
             def Advance(self):
-                # If we're playing and our row is switching to something else, we are stopping
-                if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Switching):
-                    if self.mCell.GetRow().GetPendingCell() != self.mCell:
-                        return Cell.State.Stopping(self.mCell)
-                # If our column is stopping, we're stopping
-                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Stopping):
-                    return Cell.State.Stopping(self.mCell)
+                pass
+                # # If we're playing and our row is switching to something else, we are stopping
+                # if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Switching):
+                #     if self.mCell.GetRow().GetPendingCell() != self.mCell:
+                #         return Cell.State.Stopping(self.mCell)
+                # # If our column is stopping, we're stopping
+                # if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Stopping):
+                #     return Cell.State.Stopping(self.mCell)
 
         class Stopping(_state):
             def __init__(self, cell):
@@ -163,14 +163,15 @@ class Cell(MatrixEntity):
             def OnLButtonUp(self):
                 return Cell.State.Playing(self.mCell)
 
-            # Pending to Playing if we'll hit our trigger res
+            # The column will set us to playing if it is no longer stopping,
+            # as will the row. OTherwise we go to stopped when the time comes
             def Advance(self):
-                # If we're stopping and either our row or column is playing, we're playing
-                if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Playing):
-                    return Cell.State.Playing(self.mCell)
-                if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Playing):
-                    return Cell.State.Playing(self.mCell)
-                # Otherwise, if our trigger will be hit, we're stopped
+                # # If we're stopping and either our row or column is playing, we're playing
+                # if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Playing):
+                #     return Cell.State.Playing(self.mCell)
+                # if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Playing):
+                #     return Cell.State.Playing(self.mCell)
+                # # Otherwise, if our trigger will be hit, we're stopped
                 if self.mCell.WillTriggerBeHit():
                     return Cell.State.Stopped(self.mCell)
 

@@ -82,11 +82,9 @@ class Column(MatrixEntity):
             def __init__(self, col):
                 super(type(self), self).__init__(col, 'Stopped')
 
+            # A column becomes stopped when all its cells are stopped
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # When a column is set to stopped, set all its cells to stopped
-                for c in self.mCol.setCells:
-                    c.SetState(Cell.State.Stopped(c))
                 # Set color to off
                 yield
 
@@ -147,8 +145,9 @@ class Column(MatrixEntity):
                 return Column.State.Stopping(self.mCol)
 
             def Advance(self):
-                # Stopping if all are stopping
-                if all(isinstance(c.GetActiveState(), Cell.State.Stopping) for c in self.mCol.setCells):
+                # If all are stopped or stopping, return stopping
+                if all(isinstance(c.GetActiveState(), Cell.State.Stopping) or
+                       isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
                     return Column.State.Stopping
 
         # The stopping state of a column is entered if it is clicked while playing,
@@ -166,11 +165,11 @@ class Column(MatrixEntity):
                 yield
 
             # A column will advance to stopped if all its cells are stopped,
-            # and it will revert to playing if all its cells have been set to playing
+            # and it will revert to playing if any its cells have been set to playing
             def Advance(self):
                 if all(isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
                     return Column.State.Stopped(self.mCol)
-                if all(isinstance(c.GetActiveState(), Cell.State.Playing) for c in self.mCol.setCells):
+                if any(isinstance(c.GetActiveState(), Cell.State.Playing) for c in self.mCol.setCells):
                     return Column.State.Playing(self.mCol)
 
             # If a column is stopping and it gets clicked,

@@ -66,7 +66,6 @@ class Row(MatrixEntity):
         G.add_edge(switching, playing)
         G.add_edge(stopped, switching)
         G.add_edge(playing, switching)
-        G.add_edge(switching, playing)
         G.add_edge(switching, stopped)
 
         # Call base constructor to construct state graph
@@ -102,11 +101,11 @@ class Row(MatrixEntity):
             # When a row is stopped, it should set its
             # active cell to stopped if it has one -
             # if it was stopping then everything is fine,
-            # and if it wasn't then we'll raise  an error
+            # and if it wasn't then we'll raise an error
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
                 if self.mRow.mActiveCell is not None:
-                    self.mRow.mActiveCell.SetState(Cell.State.Stopped(self.mRow.mActiveCell))ll))
+                    self.mRow.mActiveCell.SetState(Cell.State.Stopped(self.mRow.mActiveCell))
                     self.mRow.mActiveCell = None
                 # set color appropriately
                 yield
@@ -126,20 +125,30 @@ class Row(MatrixEntity):
             def __init__(self, row):
                 super(type(self), self).__init__(row, 'Playing')
 
+            # If we enter the playing state, we must determine
+            # how we got in that state and modify cells accordingly
+            # Note that we set the active cell to playing at the end of this function
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # If we came to this state from switching, it means
-                # that the switch was cancelled - revert the cell states
-                # of our pending and active cells to stopped, playing resp.
-                if isinstance(prevState, Column.State.Switching):
-                    self.mRow.mActiveCell.SetState(Cell.State.Playing(self.mRow.mActiveCell))
-                    if self.mRow.mPendingCell is not None:
-                        if self.mRow.mPendingCell is not self.mRow.mActiveCell:
-                            self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
-                            self.mRow.mPendingCell = self.mRow.mActiveCell
-                # The pending cell is now active and playing
-                self.mRow.mActiveCell = self.mRow.mPendingCell
-                self.mRow.mActiveCell.SetState(Cell.State.Playing)
+                if not(isinstance(prevState, Column.State.Switching)):
+                    raise RuntimeError('Error: How did we switch to playing?')
+                # If we were already playing
+                if self.mRow.mActiveCell is not None:
+                    # If our active cell stopped, we have a new active cell
+                    if isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Stopped):
+                        self.mRow.mActiveCell = self.mRow.mPendingCell
+                    # If the active cell isn't stopped, it means we cancelled a switch
+                    # In that case, stop the pending cell and clear it
+                    else:
+                        self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
+                        self.mRow.mPendingCell = self.mRow.mActiveCell
+                # We are just starting to play, the active cell should now be stopped, make pending active
+                else:
+                    if not isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Stopped):
+                        raise RuntimeError('Error: What is our active cell doing?')
+                    self.mRow.mActiveCell = self.mRow.mPendingCell
+                # Start playing the active cell
+                self.mRow.mActiveCell.SetState(Cell.State.Playing(self.mRow.mActiveCell))
                 yield
 
             # Switch to None if clicked
@@ -149,10 +158,9 @@ class Row(MatrixEntity):
             # We'll go to switching if we have a pending cell
             # or to stopping if our active cell is stopping
             def Advance(self):
-                # If any of our cells are pending
+                # If any of our cells are pending, switch to that cell
                 for c in self.mRow.GetAllCells():
                     if isinstance(c.GetActiveState(), Cell.State.Pending):
-                        # We are switching to the new pending cell
                         return Row.State.Switching(self.mRow, c)
                 # If none were pending and our active state is stopping, we are stopping
                 if isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Stopping):
@@ -165,6 +173,7 @@ class Row(MatrixEntity):
             def __init__(self, row, nextCell = None):
                 super(type(self), self).__init__(row, 'Switching')
                 # store next cell, don't assign yet
+                self.mPrevCell = self.mRow.mActiveCell
                 self.mNextCell = nextCell
 
             # When a row becomes switching, it's pending
@@ -174,17 +183,15 @@ class Row(MatrixEntity):
                 # The next cell shouldn't be the row's current active cell
                 if self.mNextCell is self.mRow.mActiveCell:
                     raise RuntimeError('Error: Why was row switching to active?')
-                # If the previous state was playing, we are switching to a new voice
-                if isinstance(prevState, Row.State.Playing):
-                    # If we had a pending cell that was different from the next cell, stop it
-                    if self.mRow.mPendingCell is not None:
-                        if self.mNextCell is not self.mRow.mPendingCell:
-                            self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
-                    # Set our active cell to stopping
-                    self.mRow.mActiveCell.SetState(Cell.State.Stopping(self.mRow.mActiveCell)
+                # If the previous state wasn't stopped, we are switching to a new voice
+                if not(isinstance(prevState, Row.State.Stopped)):
+                    self.mRow.mActiveCell.SetState(Cell.State.Stopping(self.mRow.mActiveCell))
+                # If we had a pending cell that was different from the next cell, stop it
+                if self.mRow.mPendingCell is not None and self.mNextCell is not self.mRow.mPendingCell:
+                    self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
                 # Set row's pending to our next
                 self.mRow.mPendingCell = self.mNextCell
-                # If our pending cell isn't None, set it to pending
+                # If our new pending cell isn't None, set it to pending
                 if self.mRow.mPendingCell is not None:
                     self.mRow.mPendingCell.SetState(Cell.State.Pending(self.mRow.mPendingCell))
                 # Depending on what the next cell is
@@ -198,13 +205,32 @@ class Row(MatrixEntity):
 
             # If we were switching, maybe advance to playing or stopped
             def Advance(self):
-                if self.mRow.mPendingCell is not None:
-                    if isinstance(self.mRow.mPendingCell, Cell.State.Playing):
-                        return Row.State.Playing(self.mRow)
-                else:
-                    if self.mActiveCell is None:
-                        raise RuntimeError('Error: Weird state transtion!')
+                # A None pending cell means we were stopping
+                if self.mNextCell is None:
+                    if self.mRow.mActiveCell is None:
+                        raise RuntimeError('Error: Why stop twice?')
+                    # If our active cell is stopped, we are stopped
                     if isinstance(self.mActiveCell, Cell.State.Stopped):
                         return Row.State.Stopped(self.mRow)
+                    # If it's playing again, then we are playing
+                    if isinstance(self.mActiveCell, Cell.State.Playing):
+                        return Row.State.Playing(self.mRow)
+                # We are switching to another cell
+                else:
+                    # If we have a new pending cell, return a new switching state
+                    for c in self.mRow.liCells:
+                        if c is not self.mNextCell:
+                            if isinstance(c.GetActiveState(), Cell.State.Pending):
+                                # This needs to be treated as a context switch
+                                return Row.State.Switching(self.mRow, c)
+                    # If the next cell starts playing, return playingS
+                    if isinstance(self.mNextCell, Cell.State.Playing):
+                        return Row.State.Playing(self.mRow)
+                    # If it went to stopped, revert to either stopped or playing
+                    if isinstance(self.mNextCell, Cell.State.Stopped):
+                        if self.mRow.mActiveCell is None:
+                            return Row.State.Stopped(self.mRow)
+                        else:
+                            return Row.State.Playing(self.mRow)
 
 from Cell import Cell

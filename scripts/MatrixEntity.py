@@ -11,33 +11,14 @@ import Shape
 # StateGraph instance that must be
 # constructed with the child states
 #
-# The design philosophy of these states must be such that
-#   1. No Entity can modify other entities or another entity's state,
-#      except during a state context activation...? What are the downsides
-#      to that... None I suppose. Well let's find out. What has to happen is
-#       - Column sets cell state to pending
-#       - If the cell was already pending, don't do anything
-#       - If the state transition is impossible, don't do anything
-#       - If the state transition is possible, do it...
-#       I just don't want to end up in a rathole of if statements, which
-#       is why I liked having that logic localized to the entity.
-#       However the case that this is meant to address is this:
-#           If I set a column pending and then advance all entities, 
-#           it's possible that the column gets updated first, sees that
-#           all its Cells are stopped, and sets itself to stopped. Maybe
-#           I shouldn't have Column state depending on Cell state, but I 
-#           need to handle the case where a column is set to pending and
-#           then all its cells are manually set to stopped. 
-#   2. An entity can modify itself, but not change its state directly
-#   3. An entity can indirectly change its state from
-#       - OnLButtonUp, which returns the state expected when clicked
-#       - Advance, which returns the next expected state given surroundings
-#   4. State advance functions can return None if no change is occurring
+# Entities can modify the data of other entities during Activation,
+# but this should be done with some forethought. Here I don't have any
+# code where a Cell modifies its Row or Column, but I do have code where
+# Rows and Columns modify their cells.
 #
-# For example, if I click a column that is Stopped, the column will return
-# Column.State.Pending as its next state. When the cells update, they will
-# look at their column - if they were stopped and the column is pending,
-# they will return Cell.State.Pending.
+# I do think it's a bit strange, but the responsibility had to be split
+# up somehow. In general I think an object should only modify other objects
+# if the other objects are somehow owend by the original
 
 class MatrixEntity:
     # class variable that keeps a counter
@@ -59,7 +40,7 @@ class MatrixEntity:
         # Set ID if not already done
         if hasattr(self, 'nID') == False:
             self.nID = MatrixEntity.NewID()
-        
+
         # Store GM
         self.mGM = GM
 
@@ -135,14 +116,26 @@ class MatrixEntity:
     def Update(self):
         return self.mSG.AdvanceState()
 
-    # Base state class that inherits from StateGraph.State
-    # Children must implement the OnLButtonUp and Advance functions
+    # The three important methods of a state are
+    # Activate, OnLButtonUp, and Advance
+    # The activate function (virtual to StateGraph.State)
+    # is the only function that should actually modify data
     class _state(StateGraph.State):
         def __init__(self, name):
             StateGraph.State.__init__(self, str(name))
+
+        # The OnLButtonUp function should return the state
+        # expected from the entity after a click (which depends
+        # on the current state, which is why its a state function)
+        # Returning None means no state change
         @abc.abstractmethod
         def OnLButtonUp(self):
             pass
+
+        # The Advance function looks at the current state of things
+        # but does not change any data - instead it will return a new
+        # state object if the state is advancing, or return None if
+        # the state should stay the same
         @abc.abstractmethod
         def Advance(self):
             pass
