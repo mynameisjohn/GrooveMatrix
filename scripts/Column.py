@@ -69,6 +69,10 @@ class Column(MatrixEntity):
         cell.SetCol(self)
 
     # Column states are a bit odd
+    # The Stopped and Playing states don't do much,
+    # but are entered in response to all cells stopping/
+    # starting, resp. The Stopping/Pending states are the
+    # ones who actually tell cells what to do
     class State:
         class _state(MatrixEntity._state):
             def __init__(self, col, name):

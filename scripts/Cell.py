@@ -140,16 +140,10 @@ class Cell(MatrixEntity):
                 return Cell.State.Stopping(self.mCell)
 
             # Our row will advance us to stopping if pending changes,
-            # and our column will set us to stopping if it is stopping
+            # and our column will set us to stopping if it is stopping,
+            # so I don't think there's much to do here
             def Advance(self):
                 pass
-                # # If we're playing and our row is switching to something else, we are stopping
-                # if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Switching):
-                #     if self.mCell.GetRow().GetPendingCell() != self.mCell:
-                #         return Cell.State.Stopping(self.mCell)
-                # # If our column is stopping, we're stopping
-                # if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Stopping):
-                #     return Cell.State.Stopping(self.mCell)
 
         class Stopping(_state):
             def __init__(self, cell):
@@ -164,14 +158,9 @@ class Cell(MatrixEntity):
                 return Cell.State.Playing(self.mCell)
 
             # The column will set us to playing if it is no longer stopping,
-            # as will the row. OTherwise we go to stopped when the time comes
+            # as will the row. OTherwise we go to stopped when the time comes,
+            # so all we need to do is check trigger res for our stop
             def Advance(self):
-                # # If we're stopping and either our row or column is playing, we're playing
-                # if isinstance(self.mCell.GetCol().GetActiveState(), Column.State.Playing):
-                #     return Cell.State.Playing(self.mCell)
-                # if isinstance(self.mCell.GetRow().GetActiveState(), Row.State.Playing):
-                #     return Cell.State.Playing(self.mCell)
-                # # Otherwise, if our trigger will be hit, we're stopped
                 if self.mCell.WillTriggerBeHit():
                     return Cell.State.Stopped(self.mCell)
 
