@@ -110,6 +110,9 @@ class Column(MatrixEntity):
         # or any of our cells start pending. It can be used to clear that
         # pending state, and will advance to Playing if any start playing
         class Pending(_state):
+            # We need to know if the column came to be pending because
+            # of a click, in which case all its cells are set to pending
+            # which is what bAll represents
             def __init__(self, col, bAll):
                 super(type(self), self).__init__(col, 'Pending')
                 self.bAll = bAll
@@ -156,10 +159,11 @@ class Column(MatrixEntity):
                 # If all are stopped or stopping, return stopping
                 if all(isinstance(c.GetActiveState(), Cell.State.Stopping) or
                        isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
-                    return Column.State.Stopping
+                    return Column.State.Stopping(self.mCol)
 
         # The stopping state of a column is entered if it is clicked while playing,
-        # or if all of its cells are set to stopping
+        # or if all of its cells are set to stopping. We don't need a bAll here 
+        # because the 'all' is implied
         class Stopping(_state):
             def __init__(self, col):
                 super(type(self), self).__init__(col, 'Stopping')

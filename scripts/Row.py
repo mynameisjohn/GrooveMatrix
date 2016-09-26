@@ -237,11 +237,11 @@ class Row(MatrixEntity):
 
             # Overload the hash/eq operators to handle different switch
             # I'm not sure if this will work...
-            #def __eq__(self, other):
-            #    if super(type(self), self).__eq__(other):
-            #        return self.mNextCell == other.mNextCell
-            #    return False
-            #def __hash__(self):
-            #    return super(type(self), self).__hash__()
+            def __eq__(self, other):
+                if super(type(self), self).__eq__(other):
+                    return self.mNextCell == other.mNextCell
+                return False
+            def __hash__(self):
+                return super(type(self), self).__hash__()
 
 from Cell import Cell

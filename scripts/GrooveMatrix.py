@@ -60,23 +60,18 @@ class GrooveMatrix:
         # Create ref to camera for fnLBDown to capture
         cCamera = Camera.Camera(self.cMatrixUI.GetCameraPtr())
 
-        # Mouse handling function
-        # LButtonDown sets mouse circ active, moves to mousePos
-        def fnLBDown(btn, mouseMgr):
-            nonlocal self, cCamera
+        # detect collision at the point of mouse up, handle it
+        def fnLBUp(btn, mouseMgr):
+            nonlocal self
+            # Get mouse circle collider
+            cMouseCirc = Shape.Shape(self.cMatrixUI.GetShape(self.nHitShapeIdx))
             # Convert SDL mouse pos to screen pos
             mX = mouseMgr.mousePos[0]
             mY = cCamera.GetScreenHeight() - mouseMgr.mousePos[1]
-
-            # Move mouse circle to pos, activate
-            cMouseCirc = Shape.Shape(self.cMatrixUI.GetShape(self.nHitShapeIdx))
+            # Move to mouse position and activate
             cMouseCirc.SetCenterPos([mX, mY])
             cMouseCirc.SetIsActive(True)
-
-        # LButtonDown sets mouse circ active, moves to mousePos
-        def fnLBUp(btn, mouseMgr):
-            nonlocal self
-            cMouseCirc = Shape.Shape(self.cMatrixUI.GetShape(self.nHitShapeIdx))
+            # Look for a collision, handle it if so
             for ent in self.setEntities:
                 if self.cMatrixUI.GetIsOverlapping(ent.GetShape().c_ptr, cMouseCirc.c_ptr):
                     ent.OnLButtonUp()
@@ -84,7 +79,7 @@ class GrooveMatrix:
             # Deactivate mouse circ
             cMouseCirc.SetIsActive(False)
 
-        mouseMgr = MouseManager([Button(sdl2.SDL_BUTTON_LEFT, fnDown = fnLBDown, fnUp = fnLBUp)])
+        mouseMgr = MouseManager([Button(sdl2.SDL_BUTTON_LEFT, fnUp = fnLBUp)])
 
         # Construct input manager
         self.mInputManager = InputManager(keyMgr, mouseMgr)
@@ -160,11 +155,10 @@ class GrooveMatrix:
             # Jostle the graph to let any rows start pending
             self._SolveStateGraph()
 
-            # If any rows have pending cells
+            # If any rows have pending cells, set them to playing
             bStartPlaying = False
             for row in self.diRows.values():
                 if isinstance(row.GetActiveState(), Row.State.Switching):
-                    # Get the pending cell and set it to playing directly
                     row.GetPendingCell().SetState(Cell.State.Playing(row.GetPendingCell()))
                     bStartPlaying = True
 
@@ -255,7 +249,6 @@ class GrooveMatrix:
                 nPosX0 = r.liCells[0].GetDrawable().GetPos()[0]
                 nPosX = nPosX0 + len(self.liCols) * (Constants.nGap + Column.nTriDim)
                 self.liCols.append(Column(self, nPosX, {r.liCells[colIdx]}))
-
 
         # Store all entities together for updating and whatnot
         self.setEntities.add(r)

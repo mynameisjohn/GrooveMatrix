@@ -1,3 +1,4 @@
+# UI gap
 class Constants:
     nGap = 10
 
