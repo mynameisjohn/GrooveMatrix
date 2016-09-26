@@ -220,7 +220,7 @@ class Row(MatrixEntity):
                 else:
                     # If we have a new pending cell, return a new switching state
                     for c in self.mRow.liCells:
-                        if c is not self.mNextCell and :
+                        if c is not self.mNextCell:
                             if isinstance(c.GetActiveState(), Cell.State.Pending):
                                 return Row.State.Switching(self.mRow, c)
                     # If the next cell starts playing, return playing
