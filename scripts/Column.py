@@ -43,7 +43,7 @@ class Column(MatrixEntity):
             c.SetCol(self)
 
         stopped = Column.State.Stopped(self)
-        pending = Column.State.Pending(self)
+        pending = Column.State.Pending(self, False)
         playing = Column.State.Playing(self)
         stopping = Column.State.Stopping(self)
 
@@ -76,6 +76,8 @@ class Column(MatrixEntity):
     class State:
         class _state(MatrixEntity._state):
             def __init__(self, col, name):
+                if not(isinstance(col, Column)):
+                    raise RuntimeError('Error: Constructing Column state without Column!');
                 MatrixEntity._state.__init__(self, name)
                 self.mCol = col
 
@@ -95,29 +97,31 @@ class Column(MatrixEntity):
             def Advance(self):
                 # If any of our cells are pending, then we are pending
                 if any(isinstance(c.GetActiveState(), Cell.State.Pending) for c in self.mCol.setCells):
-                    return Column.State.Pending(self.mCol)
+                    return Column.State.Pending(self.mCol, False)
 
             # When a stopped column is clicked,
             # it should set itself to pending.
             # its cells should see this and set
             # themselves to pending accordingly
             def OnLButtonUp(self):
-                return Column.State.Pending(self.mCol)
+                return Column.State.Pending(self.mCol, True)
 
         # The pending state is entered when a stopped column is clicked,
         # or any of our cells start pending. It can be used to clear that
         # pending state, and will advance to Playing if any start playing
         class Pending(_state):
-            def __init__(self, col):
+            def __init__(self, col, bAll):
                 super(type(self), self).__init__(col, 'Pending')
+                self.bAll = bAll
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
                 # When a column is set to pending, set all its cells
                 # to pending. If that isn't possible, there's probably
                 # some exception I should be handling...
-                for c in self.mCol.setCells:
-                    c.SetState(Cell.State.Pending(c))
+                if self.bAll:
+                    for c in self.mCol.setCells:
+                        c.SetState(Cell.State.Pending(c))
                 yield
 
             # Revert to stopped if clicked
@@ -127,10 +131,10 @@ class Column(MatrixEntity):
             def Advance(self):
                 # Pending to Playing if any cells are playing
                 if any(isinstance(c.GetActiveState(), Cell.State.Playing) for c in self.mCol.setCells):
-                    return Column.State.Playing(self)
+                    return Column.State.Playing(self.mCol)
                 # Stopped if all are stopped
                 if all(isinstance(c.GetActiveState(), Cell.State.Stopped) for c in self.mCol.setCells):
-                    return Column.State.Stopped(self)
+                    return Column.State.Stopped(self.mCol)
 
         # The playing state of a column indicates that
         # at least one of our cells is playing - clicking

@@ -89,6 +89,8 @@ class Row(MatrixEntity):
     class State:
         class _state(MatrixEntity._state):
             def __init__(self, row, name):
+                if not(isinstance(row, Row)):
+                    raise RuntimeError('Error: Constructing Row state without Row!');
                 MatrixEntity._state.__init__(self, name)
                 self.mRow = row
 
@@ -233,11 +235,13 @@ class Row(MatrixEntity):
                         else:
                             return Row.State.Playing(self.mRow)
 
-            # Overload the eq operator to handle different switch
+            # Overload the hash/eq operators to handle different switch
             # I'm not sure if this will work...
-            def __eq__(self, other):
-                if super(type(self), self).__eq__(self, other):
-                    return self.mNextCell == other.mNextCell
-                return False
+            #def __eq__(self, other):
+            #    if super(type(self), self).__eq__(other):
+            #        return self.mNextCell == other.mNextCell
+            #    return False
+            #def __hash__(self):
+            #    return super(type(self), self).__hash__()
 
 from Cell import Cell

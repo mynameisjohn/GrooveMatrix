@@ -42,7 +42,7 @@ def Initialize(pMatrixUI, pClipLauncher):
         return (clrOn, clrOff)
 
     # Like above but makes a random color
-    def makeColor():
+    def makeRndColor():
         clrOn = [0. for i in range(4)]
         for i in range(len(clrOn)):
             clrOn[i] = random.uniform(0.5, 0.9)

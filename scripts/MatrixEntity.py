@@ -104,7 +104,7 @@ class MatrixEntity:
     def __hash__(self):
         return hash(self.nID)
     def __eq__(self, other):
-        return self.nID == other.nID
+        return False if other is None else self.nID == other.nID
 
     # Every state must implement OnLButtonUp
     def OnLButtonUp(self):

@@ -71,6 +71,8 @@ class Cell(MatrixEntity):
     class State:
         class _state(MatrixEntity._state):
             def __init__(self, cell, name):
+                if not(isinstance(cell, Cell)):
+                    raise RuntimeError('Error: Constructing Cell state without Cell!');
                 MatrixEntity._state.__init__(self, name)
                 self.mCell = cell
 
