@@ -173,7 +173,8 @@ class Column(MatrixEntity):
                 # When a column is set to stopping,
                 # all of its cells should be stopping as well
                 for c in self.mCol.setCells:
-                    c.SetState(Cell.State.Stopping(c))
+                    if not(isinstance(c.GetActiveState(), Cell.State.Stopped)):
+                        c.SetState(Cell.State.Stopping(c))
                 yield
 
             # A column will advance to stopped if all its cells are stopped,

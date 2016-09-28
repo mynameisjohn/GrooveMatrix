@@ -231,10 +231,10 @@ class Row(MatrixEntity):
                     if self.mRow.mActiveCell is None:
                         raise RuntimeError('Error: Why stop twice?')
                     # If our active cell is stopped, we are stopped
-                    if isinstance(self.mActiveCell, Cell.State.Stopped):
+                    if isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Stopped):
                         return Row.State.Stopped(self.mRow)
                     # If it's playing again, then we are playing
-                    if isinstance(self.mActiveCell, Cell.State.Playing):
+                    if isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Playing):
                         return Row.State.Playing(self.mRow)
                 # We are switching to another cell
                 else:
@@ -244,10 +244,10 @@ class Row(MatrixEntity):
                             if isinstance(c.GetActiveState(), Cell.State.Pending):
                                 return Row.State.Switching(self.mRow, c)
                     # If the next cell starts playing, return playing
-                    if isinstance(self.mNextCell, Cell.State.Playing):
+                    if isinstance(self.mNextCell.GetActiveState(), Cell.State.Playing):
                         return Row.State.Playing(self.mRow)
                     # If it went to stopped, revert to either stopped or playing
-                    if isinstance(self.mNextCell, Cell.State.Stopped):
+                    if isinstance(self.mNextCell.GetActiveState(), Cell.State.Stopped):
                         if self.mRow.mActiveCell is None:
                             return Row.State.Stopped(self.mRow)
                         else:
