@@ -68,6 +68,21 @@ class Row(MatrixEntity):
         G.add_edge(playing, switching)
         G.add_edge(switching, stopped)
 
+        # Because the __eq__ operator for
+        # switching states takes the next
+        # state into account, we must connect
+        # all possible switching states
+        for c1 in self.liCells:
+            # Playing/Stopped can switch to this cell
+            s1 = Row.State.Switching(self, c1)
+            G.add_edges_from([(stopped, s1), (s1, stopped)]) 
+            G.add_edges_from([(playing, s1), (s1, playing)])
+            # Different switching states can switch to each other
+            for c2 in self.liCells:
+                if c2 is not c1:
+                    s2 = Row.State.Switching(self, c2)
+                    G.add_edges_from([(s1, s2), (s2, s1)])
+
         # Call base constructor to construct state graph
         super(Row, self).__init__(GM, G, stopped)
 
@@ -133,7 +148,7 @@ class Row(MatrixEntity):
             # Note that we set the active cell to playing at the end of this function
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                if not(isinstance(prevState, Column.State.Switching)):
+                if not(isinstance(prevState, Row.State.Switching)):
                     raise RuntimeError('Error: How did we switch to playing?')
                 # If we were already playing, we'll have an active cell
                 if self.mRow.mActiveCell is not None:
@@ -148,8 +163,6 @@ class Row(MatrixEntity):
                 # We are just starting to play, the active cell should now be stopped,
                 # So make the pending cell the active one and start it
                 else:
-                    if not isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Stopped):
-                        raise RuntimeError('Error: What is our active cell doing?')
                     self.mRow.mActiveCell = self.mRow.mPendingCell
                 # Start playing the active cell
                 self.mRow.mActiveCell.SetState(Cell.State.Playing(self.mRow.mActiveCell))
@@ -175,7 +188,12 @@ class Row(MatrixEntity):
         # to a different active cell, or stopping
         class Switching(_state):
             def __init__(self, row, nextCell = None):
-                super(type(self), self).__init__(row, 'Switching')
+                # Switching states should not compare equal if they have
+                # different nextCell members, so add its ID to the name
+                # (the state name is used during hash/eq tests in nx)
+                strName = 'Off' if nextCell is None else str(nextCell.nID)
+                super(type(self), self).__init__(row, 'Switching->' + strName)
+
                 # store prev/next cell, don't assign yet
                 self.mPrevCell = self.mRow.mActiveCell
                 self.mNextCell = nextCell
@@ -234,14 +252,5 @@ class Row(MatrixEntity):
                             return Row.State.Stopped(self.mRow)
                         else:
                             return Row.State.Playing(self.mRow)
-
-            # Overload the hash/eq operators to handle different switch
-            # I'm not sure if this will work...
-            def __eq__(self, other):
-                if super(type(self), self).__eq__(other):
-                    return self.mNextCell == other.mNextCell
-                return False
-            def __hash__(self):
-                return super(type(self), self).__hash__()
 
 from Cell import Cell

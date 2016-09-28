@@ -54,7 +54,7 @@ class StateGraph:
                         else:
                             nextState = self._fnAdvance(self)
                     if nextState not in self.G.neighbors(self.activeState):
-                        raise RuntimeError('Error: Invalid state transition!')
+                        raise RuntimeError('Error: Invalid state transition!', self.activeState, nextState)
                 prevState = self.activeState
 
         # Declare coro, do not prime (?)
@@ -73,7 +73,7 @@ class StateGraph:
 
     def SetState(self, nextState):
         if nextState not in self.G.neighbors(self.activeState):
-            raise RuntimeError('Error: Invalid state transition!')
+            raise RuntimeError('Error: Invalid state transition!', self.activeState, nextState)
         self._mNextStateOverride = nextState
         next(self._stateCoro)
 
