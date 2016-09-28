@@ -208,9 +208,11 @@ class Row(MatrixEntity):
                 # If the previous state wasn't stopped, we are switching to a new voice
                 if not(isinstance(prevState, Row.State.Stopped)):
                     self.mRow.mActiveCell.SetState(Cell.State.Stopping(self.mRow.mActiveCell))
-                # If we had a pending cell that was different from the next cell, stop it
-                if self.mRow.mPendingCell is not None and self.mNextCell is not self.mRow.mPendingCell:
-                    self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
+                # If we were just switching, presumably the switch didn't occur
+                # in that case, set the previous state's pending cell to stopped
+                if isinstance(prevState, Row.State.Switching):
+                    if prevState.mNextCell is not None:
+                        prevState.mNextCell.SetState(Cell.State.Stopped(prevState.mNextCell))
                 # Set row's pending to our next, set it to pending of not None
                 self.mRow.mPendingCell = self.mNextCell
                 if self.mRow.mPendingCell is not None:
