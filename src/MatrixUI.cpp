@@ -71,8 +71,9 @@ int MatrixUI::AddDrawableIQM( std::string strIqmFile, vec2 T, vec2 S, vec4 C, fl
 		fquat qRot( cos( theta / 2 ), vec3( 0, 0, sin( theta / 2 ) ) );
 		D.Init( strIqmFile, C, quatvec( vec3( T, 0 ), qRot, quatvec::Type::TR ), S );
 	}
-	catch ( std::runtime_error )
+	catch ( std::runtime_error e )
 	{
+		std::cout << e.what() << std::endl;
 		return -1;
 	}
 
@@ -90,8 +91,9 @@ int MatrixUI::AddDrawableTri( std::string strName, std::array<vec3, 3> triVerts,
 		fquat qRot( cos( theta / 2 ), vec3( 0, 0, sin( theta / 2 ) ) );
 		D.Init( strName, triVerts, C, quatvec( vec3( T, 0 ), qRot, quatvec::Type::TR ), S );
 	}
-	catch ( std::runtime_error )
+	catch ( std::runtime_error e )
 	{
+		std::cout << e.what() << std::endl;
 		return -1;
 	}
 
@@ -135,9 +137,10 @@ int MatrixUI::AddShape( Shape::EType eType, glm::vec2 v2Pos, std::map<std::strin
 		m_vShapes.push_back( sb );
 		return m_vShapes.size() - 1;
 	}
-	catch ( std::out_of_range )
+	catch ( std::out_of_range e )
 	{
 		std::cerr << "Error! Invalid details provided when creating Rigid Body!" << std::endl;
+		std::cout << e.what() << std::endl;
 	}
 
 	return -1;
@@ -229,6 +232,7 @@ bool MatrixUI::InitDisplay( std::string strWindowName, vec4 v4ClearColor, std::m
 	}
 	catch ( std::out_of_range e )
 	{
+		std::cout << e.what() << std::endl;
 		if ( pWindow )
 			SDL_DestroyWindow( pWindow );
 

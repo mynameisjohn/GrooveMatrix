@@ -33,7 +33,7 @@ class Row(MatrixEntity):
         self.liCells = []
         for clip in rowData.liClipData:
             # Construct the cell
-            cell = Cell(GM, self, clip, 1.)
+            cell = Cell(GM, self, clip, .5)
 
             # Determine x pos
             liCellPos = [nCellPosX, nPosY]
@@ -155,10 +155,12 @@ class Row(MatrixEntity):
                     # If it's stopped, that means we've switched to a new active cell
                     if isinstance(self.mRow.mActiveCell.GetActiveState(), Cell.State.Stopped):
                         self.mRow.mActiveCell = self.mRow.mPendingCell
-                    # If the active cell isn't stopped, it means we cancelled a switch
-                    # and reverted to playing; in that case, stop the pending cell and clear it
+                    # If the active cell isn't stopped, we reverted from switching to playing
                     else:
-                        self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
+                        # If we set some other cell to pending, make sure it's stopped
+                        if self.mRow.mPendingCell is not None:
+                            self.mRow.mPendingCell.SetState(Cell.State.Stopped(self.mRow.mPendingCell))
+                        # We're now playing the active cell
                         self.mRow.mPendingCell = self.mRow.mActiveCell
                 # We are just starting to play, the active cell should now be stopped,
                 # So make the pending cell the active one and start it

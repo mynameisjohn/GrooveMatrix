@@ -55,7 +55,7 @@ class StateGraph:
                             nextState = self._fnAdvance(self)
                     if nextState not in self.G.neighbors(self.activeState):
                         raise RuntimeError('Error: Invalid state transition!', self.activeState, nextState)
-                    #print(self.activeState, nextState)
+                    print(self.activeState, nextState)
                 prevState = self.activeState
 
         # Declare coro, do not prime (?)

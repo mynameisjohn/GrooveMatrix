@@ -38,6 +38,7 @@ class Cell(MatrixEntity):
         G.add_edge(stopped, pending)
         G.add_edge(playing, stopping)
         G.add_edge(stopping, stopped)
+        G.add_edge(stopping, playing)
 
         # Call base constructor to construct state graph
         super(Cell, self).__init__(GM, G, stopped)
@@ -127,9 +128,10 @@ class Cell(MatrixEntity):
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
-                # We should have been the row's pending cell
-                if self.mCell.GetRow().GetPendingCell() is not self.mCell:
-                    raise RuntimeError('Weird state transition')
+                # If previously pending, we should have been the row's pending cell
+                if isinstance(prevState, Cell.State.Pending):
+                    if self.mCell.GetRow().GetPendingCell() is not self.mCell:
+                        raise RuntimeError('Weird state transition')
                 # If we weren't already playing, tell GM to play our stuff
                 if not(isinstance(prevState, Cell.State.Stopping)):
                     self.mCell.mGM.StartCell(self.mCell)

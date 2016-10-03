@@ -54,16 +54,22 @@ def Initialize(pMatrixUI, pClipLauncher):
     def formatClipTup(strName):
         nFadeMs = 5
         strCD = '../audio/'
-        return (strName, strCD+strName+'_head.wav', strCD+strName+'_tail.wav', nFadeMs )
-    diRowClips = {  'Drums' :       Row.RowData(liClipData = [formatClipTup('drum1'), formatClipTup('drum2')],
-                                                clrOff = makeColor(0)[0],
-                                                clrOn = makeColor(0)[1]),
-                    'Bass' :        Row.RowData(liClipData = [formatClipTup('bass1')],
-                                                clrOff = makeColor(1)[0],
-                                                clrOn =  makeColor(1)[1]),
-                    'Sustain' :     Row.RowData(liClipData = [formatClipTup('sus1')],
-                                                clrOff =  makeColor(2)[0],
-                                                clrOn =  makeColor(2)[1])}
+        return (strName, strCD+strName+'Head.wav', strCD+strName+'Tail.wav', nFadeMs )
+    #diRowClips = {  'Drums' :       Row.RowData(liClipData = [formatClipTup('drum1_'), formatClipTup('drum2_')],
+    #                                            clrOff = makeColor(0)[0],
+    #                                            clrOn = makeColor(0)[1]),
+    #                'Bass' :        Row.RowData(liClipData = [formatClipTup('bass1_')],
+    #                                            clrOff = makeColor(1)[0],
+    #                                            clrOn =  makeColor(1)[1]),
+    #                'Sustain' :     Row.RowData(liClipData = [formatClipTup('sus1_')],
+    #                                            clrOff =  makeColor(2)[0],
+    #                                            clrOn =  makeColor(2)[1])}
+
+    diRowClips = dict()
+    for strRow in ['scre4m/drums', 'scre4m/chords', 'scre4m/lead', 'scre4m/bass']:
+        clr = makeRndColor()
+        diRowClips[strRow] = Row.RowData([formatClipTup(strRow)], clr[0], clr[1])
+                                                        
 
     #diRowClips = {
     #    'Drums' :   [formatClipTup('drum_gr_'+str(i) for i in range(3)],
