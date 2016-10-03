@@ -148,6 +148,11 @@ class Column(MatrixEntity):
 
             @contextlib.contextmanager
             def Activate(self, SG, prevState):
+                # If we were previously stopping, make sure
+                # our cells are playing
+                if isinstance(prevState, Column.State.Stopping):
+                    for c in self.mCol.setCells:
+                        c.SetState(Cell.State.Playing(c))
                 # Set our color to on
                 yield
 
