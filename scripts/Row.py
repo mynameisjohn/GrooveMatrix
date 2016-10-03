@@ -14,7 +14,7 @@ class Row(MatrixEntity):
     nHeaderH = 50    # height of row header
 
     # Useful when constructing
-    RowData = namedtuple('RowData', ('liClipData', 'clrOn', 'clrOff'))
+    RowData = namedtuple('RowData', ('liClipData', 'clrOn', 'clrOff', 'fVol0'))
 
     # Constructor takes rowData, GM, and y position
     def __init__(self, GM, rowData, nPosY):
@@ -33,7 +33,7 @@ class Row(MatrixEntity):
         self.liCells = []
         for clip in rowData.liClipData:
             # Construct the cell
-            cell = Cell(GM, self, clip, .5)
+            cell = Cell(GM, self, clip, rowData.fVol0)
 
             # Determine x pos
             liCellPos = [nCellPosX, nPosY]
