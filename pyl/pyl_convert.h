@@ -219,33 +219,6 @@ namespace pyl
 		return PyLong_FromLong(num);
 	}
 
-	template<typename T>
-	PyObject * alloc_buf( const T * const pBuf, int N )
-	{
-		N = std::max( N, 0 );
-		PyObject * pRet = PyList_New( N );
-		if ( pBuf && pRet )
-		{
-			for ( Py_ssize_t i = 0; i < N; i++ )
-			{
-				PyList_SetItem( pRet, i, alloc_pyobject( pBuf[i] ) );
-			}
-		}
-
-		return pRet;
-	}
-
-	// Generic python list allocation
-	template<class T> static PyObject *alloc_list(const T &container) {
-		PyObject *lst(PyList_New(container.size()));
-
-		Py_ssize_t i(0);
-		for (auto it(container.begin()); it != container.end(); ++it)
-			PyList_SetItem(lst, i++, alloc_pyobject(*it));
-
-		return lst;
-	}
-
 	// Creates a PyString from a std::string
 	PyObject *alloc_pyobject(const std::string &str);
 
@@ -273,6 +246,33 @@ namespace pyl
         return PyCapsule_New((voidptr_t)ptr, NULL, NULL);
     }
     
+	template<typename T>
+	PyObject * alloc_buf( const T * const pBuf, int N )
+	{
+		N = std::max( N, 0 );
+		PyObject * pRet = PyList_New( N );
+		if ( pBuf && pRet )
+		{
+			for ( Py_ssize_t i = 0; i < N; i++ )
+			{
+				PyList_SetItem( pRet, i, alloc_pyobject( pBuf[i] ) );
+			}
+		}
+
+		return pRet;
+	}
+
+	// Generic python list allocation
+	template<class T> static PyObject *alloc_list(const T &container) {
+		PyObject *lst(PyList_New(container.size()));
+
+		Py_ssize_t i(0);
+		for (auto it(container.begin()); it != container.end(); ++it)
+			PyList_SetItem(lst, i++, alloc_pyobject(*it));
+
+		return lst;
+	}
+
 	// Creates a PyList from a std::vector
 	template<class T> PyObject *alloc_pyobject(const std::vector<T> &container) {
 		return alloc_list(container);
