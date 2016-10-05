@@ -104,6 +104,9 @@ public:
 	bool HandleCommand( Command cmd );
 	bool HandleCommands( std::list<Command> cmd );
 
+    // Set this to true to turn on sample pos printing
+    void SetSamplePosPrinting(bool bPrint);
+
 private:
 	// Sort of a dumb typedef
 	using AudioSpecPtr = std::unique_ptr<SDL_AudioSpec>;
@@ -134,6 +137,11 @@ private:
 
 	// Called by from ::Update to get messages from aud thread
 	void getMessagesFromAudThread();
+
+    // I'm using this mutex to control who prints to cout
+    // so I can debug things between the audio/main threads
+    std::mutex m_muPrintSamplePos;
+    bool m_bPrintSamplePos;
 
 public:
 	static bool pylExpose();

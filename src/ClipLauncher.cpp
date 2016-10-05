@@ -7,6 +7,7 @@
 
 #include <algorithm>
 #include <iostream>
+#include <iomanip>
 #include <chrono>
 
 // Helper to check validity of audio specs
@@ -148,25 +149,34 @@ bool ClipLauncher::RegisterClip( std::string strClipName, std::string strHeadFil
 void ClipLauncher::getMessagesFromAudThread()
 {
 	// We gotta lock this while we mess with the public queue
-	std::lock_guard<std::mutex> lg( m_muAudioMutex );
+    {
+        std::lock_guard<std::mutex> lg( m_muAudioMutex );
 
-	// Get out if empty
-	if ( m_liPublicCmdQueue.empty() )
-		return;
+        // Get out if empty
+        if ( m_liPublicCmdQueue.empty() )
+            return;
 
-	// Grab the front, maybe inc buf count and pop
-	Command tFront = m_liPublicCmdQueue.front();
-	if ( tFront.eID == ECommandID::BufCompleted )
-	{
-		m_liPublicCmdQueue.pop_front();
-		m_uNumBufsCompleted += tFront.uData;
-	}
+        // Grab the front, maybe inc buf count and pop
+        Command tFront = m_liPublicCmdQueue.front();
+        if ( tFront.eID == ECommandID::BufCompleted )
+        {
+            m_liPublicCmdQueue.pop_front();
+            m_uNumBufsCompleted += tFront.uData;
+        }
 
-	if ( std::any_of( m_liPublicCmdQueue.begin(), m_liPublicCmdQueue.end(), [] ( const Command& cmd ) { return cmd.eID == ECommandID::AllQuiet; } ) )
-	{
-		m_liPublicCmdQueue.clear();
-		SetPlayPause( false );
-	}
+        if ( std::any_of( m_liPublicCmdQueue.begin(), m_liPublicCmdQueue.end(), [] ( const Command& cmd ) { return cmd.eID == ECommandID::AllQuiet; } ) )
+        {
+            m_liPublicCmdQueue.clear();
+            SetPlayPause( false );
+        }
+    }
+
+    // Maybe print sample pos
+    {
+        std::lock_guard<std::mutex> lg(m_muPrintSamplePos);
+        if (m_bPrintSamplePos)
+            std::cout << "Audio Thread's Sample Pos: " << m_uSamplePos << "\n";
+    }
 }
 
 // Called by client thread
@@ -317,6 +327,13 @@ void ClipLauncher::fill_audio_impl( uint8_t * pStream, int nBytesToFill )
 		// Just do a mod
 		m_uSamplePos %= m_uMaxSampleCount;
 	}
+
+    // Maybe print sample pos
+    {
+        std::lock_guard<std::mutex> lg(m_muPrintSamplePos);
+        if (m_bPrintSamplePos)
+            std::cout << "Audio Thread's Sample Pos: " << m_uSamplePos << "\n";
+    }
 }
 
 // Called by audio thread, locks mutex while getting client tasks
@@ -420,4 +437,10 @@ void ClipLauncher::getMessagesFromMainThread( std::list<Command> liCommandsToPos
 		cmd.eID = ClipLauncher::ECommandID::AllQuiet;
 		m_liPublicCmdQueue.push_back( cmd );
 	}
+}
+
+void ClipLauncher::SetSamplePosPrinting(bool bPrint){
+    std::lock_guard<std::mutex> lg(m_muPrintSamplePos);
+    m_bPrintSamplePos = bPrint;
+    std::cout << "\nSampling printing is now " << std::boolalpha << bPrint << std::endl;
 }
