@@ -39,17 +39,17 @@ NAMES ${GLEW_LIB_NAMES}
 HINTS $ENV{GLEW_DIR}
 PATH_SUFFIXES lib/Release/Win32 lib/Release/x64)
 
-# if(NOT GLEW_LIBRARY)
-#   find_library(GLEW_LIBRARY_RELEASE NAMES GLEW glew32 glew glew32s PATHS E:/Libraries/glew/lib/Release PATH_SUFFIXES Win32 x64 lib64)
-#   find_library(GLEW_LIBRARY_DEBUG NAMES GLEWd glew32d glewd PATHS E:/Libraries/glew/lib/Release PATH_SUFFIXES Win32 x64 lib64)
-#
-#   include(${CMAKE_CURRENT_LIST_DIR}/SelectLibraryConfigurations.cmake)
-#   select_library_configurations(GLEW)
-# endif ()
+if(NOT GLEW_LIBRARY)
+  find_library(GLEW_LIBRARY_RELEASE NAMES GLEW glew32 glew glew32s PATHS E:/Libraries/glew/lib/Release PATH_SUFFIXES Win32 x64 lib64)
+  find_library(GLEW_LIBRARY_DEBUG NAMES GLEWd glew32d glewd PATHS E:/Libraries/glew/lib/Release PATH_SUFFIXES Win32 x64 lib64)
 
-# include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
-# find_package_handle_standard_args(GLEW
-#                                   REQUIRED_VARS GLEW_INCLUDE_DIR GLEW_LIBRARY)
+  include(${CMAKE_CURRENT_LIST_DIR}/SelectLibraryConfigurations.cmake)
+  select_library_configurations(GLEW)
+endif ()
+
+include(${CMAKE_CURRENT_LIST_DIR}/FindPackageHandleStandardArgs.cmake)
+find_package_handle_standard_args(GLEW
+                                  REQUIRED_VARS GLEW_INCLUDE_DIR GLEW_LIBRARY)
 
 if(GLEW_FOUND)
   set(GLEW_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
