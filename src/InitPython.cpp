@@ -112,7 +112,6 @@ namespace pyl
 		pyl::ModuleDef * pModDef = CreateMod( modName );\
 		if ( pModDef == nullptr ){\
 			throw pyl::runtime_error("Error creating module ##modName");\
-			return false;\
 		}
 
 /*static*/ bool EntComponent::pylExpose()

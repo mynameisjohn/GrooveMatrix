@@ -52,8 +52,8 @@ def Initialize(pMatrixUI, pClipLauncher):
     # Declare all clips (clip creation args as tuples)
     # formatClipTup sets up args for RegisterClip
     def formatClipTup(strName,  nFadeMS = 5):
-        strCD = '../audio/'
-        return (strName, strCD+strName+'Head.wav', strCD+strName+'Tail.wav', nFadeMs )
+        strCD = '../sounds/'
+        return (strName, strCD+strName+'_Head.wav', strCD+strName+'_Tail.wav', nFadeMS )
     #diRowClips = {  'Drums' :       Row.RowData(liClipData = [formatClipTup('drum1_'), formatClipTup('drum2_')],
     #                                            clrOff = makeColor(0)[0],
     #                                            clrOn = makeColor(0)[1]),
@@ -65,11 +65,9 @@ def Initialize(pMatrixUI, pClipLauncher):
     #                                            clrOn =  makeColor(2)[1])}
 
     diRowClips = dict()
-    for strRow in ['scre4m/drums', 'scre4m/chords', 'scre4m/lead', 'scre4m/bass']:
+    for strRow, fVol0 in [('Bass', .5), ('Drums', .5), ('Chords', .5), ('Lead', .4)]:
         clr = makeRndColor()
-        fVol0 = .5
         diRowClips[strRow] = Row.RowData([formatClipTup(strRow)], clr[0], clr[1], fVol0)
-    diRowClips['scre4m/lead'].fVol0 = .4
                                           
     #diRowClips = {
     #    'Drums' :   [formatClipTup('drum_gr_'+str(i) for i in range(3)],

@@ -69,16 +69,19 @@ int MatrixUI::AddDrawableIQM( std::string strIqmFile, vec2 T, vec2 S, vec4 C, fl
 	{
 		// Assume rotation about z for now
 		fquat qRot( cos( theta / 2 ), vec3( 0, 0, sin( theta / 2 ) ) );
-		D.Init( strIqmFile, C, quatvec( vec3( T, 0 ), qRot, quatvec::Type::TR ), S );
+		if (D.Init(strIqmFile, C, quatvec(vec3(T, 0), qRot, quatvec::Type::TR), S)) 
+		{
+			m_vDrawables.push_back(D);
+			return (int)(m_vDrawables.size() - 1);
+		}
 	}
 	catch ( std::runtime_error e )
 	{
 		std::cout << e.what() << std::endl;
-		return -1;
+		
 	}
 
-	m_vDrawables.push_back( D );
-	return (int) (m_vDrawables.size() - 1);
+	return -1;
 }
 
 // Add a drawable from three triangle verts
@@ -89,16 +92,18 @@ int MatrixUI::AddDrawableTri( std::string strName, std::array<vec3, 3> triVerts,
 	{
 		// Assume rotation about z for now
 		fquat qRot( cos( theta / 2 ), vec3( 0, 0, sin( theta / 2 ) ) );
-		D.Init( strName, triVerts, C, quatvec( vec3( T, 0 ), qRot, quatvec::Type::TR ), S );
+		if (D.Init(strName, triVerts, C, quatvec(vec3(T, 0), qRot, quatvec::Type::TR), S))
+		{
+			m_vDrawables.push_back(D);
+			return (int)(m_vDrawables.size() - 1);
+		}
 	}
 	catch ( std::runtime_error e )
 	{
 		std::cout << e.what() << std::endl;
-		return -1;
 	}
-
-	m_vDrawables.push_back( D );
-	return (int) (m_vDrawables.size() - 1);
+	
+	return -1;
 }
 
 int MatrixUI::AddShape( Shape::EType eType, glm::vec2 v2Pos, std::map<std::string, float> mapDetails )

@@ -25,6 +25,11 @@ class Cell(MatrixEntity):
         self.nShIdx = GM.cMatrixUI.AddShape(Shape.Circle, [0, 0], {'r' : Cell.nRadius})
         self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/circle.iqm', [0, 0], 2 * [2*Cell.nRadius], [0, 0, 0, 1], 0. )
 
+        if self.nShIdx < 0:
+            raise RuntimeError('Error creating Shape')
+        if self.nDrIdx < 0:
+            raise RuntimeError('Error creating Drawable')
+
         # Create state graph nodes
         pending = Cell.State.Pending(self)
         playing = Cell.State.Playing(self)

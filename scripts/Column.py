@@ -37,6 +37,11 @@ class Column(MatrixEntity):
         self.nID = MatrixEntity.NewID()
         self.nDrIdx = GM.cMatrixUI.AddDrawableTri('col'+str(self.nID), triVerts, [nPosX, nColY], [1, 1], self.clrOff, 0. )
 
+        if self.nShIdx < 0:
+            raise RuntimeError('Error creating Shape')
+        if self.nDrIdx < 0:
+            raise RuntimeError('Error creating Drawable')
+
         # If a GM instance is making us with cells, they get stored here
         self.setCells = {c for c in setCells if isinstance(c, Cell)}
         for c in self.setCells:

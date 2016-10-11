@@ -23,6 +23,11 @@ class Row(MatrixEntity):
         self.nShIdx = GM.cMatrixUI.AddShape(Shape.AABB, [nRowX, nPosY], {'w' : Row.nHeaderW, 'h': Row.nHeaderH})
         self.nDrIdx = GM.cMatrixUI.AddDrawableIQM('../models/quad.iqm', [nRowX, nPosY], [Row.nHeaderW, Row.nHeaderH], rowData.clrOff, 0. )
 
+        if self.nShIdx < 0:
+            raise RuntimeError('Error creating Shape')
+        if self.nDrIdx < 0:
+            raise RuntimeError('Error creating Drawable')
+
         # Move cells to correct pos, set colors
         self.clrOn = rowData.clrOn
         self.clrOff = rowData.clrOff

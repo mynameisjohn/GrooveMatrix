@@ -139,7 +139,6 @@ bool Shape::IsPointInside( const glm::vec2 v2Point ) const
 	}
 
 	throw std::runtime_error( "Error: Invalid rigid body type!" );
-	return false;
 }
 
 ////////////////////////////////////////////////////////////////////////////
